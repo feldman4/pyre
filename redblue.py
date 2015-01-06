@@ -1,4 +1,4 @@
-from pyre.ai import game_of_life
+import pyre.ai
 import pyre.engine
 from pyre.agent import Spin, Cube
 import pyglet
@@ -7,25 +7,11 @@ import random
 import types
 import time
 
-import rpyc
-from rpyc.utils.server import ThreadedServer
-from threading import Thread
 
-CRYSTAL_SIZE =2
+CRYSTAL_SIZE = 4
 
 
 def main():
-    # rpyc service for remote access
-    junk = 3
-    class MyService(rpyc.Service):
-        def exposed_get_main_window(self):
-            return window
-        def exposed_set_junk(self,x):
-            global junk
-            junk = x
-            return junk
-
-    start_server(MyService)
 
     # load file with face textures and make a group of it
     texture_region = pyglet.resource.texture('texture.png')
@@ -33,18 +19,23 @@ def main():
 
     # make an engine to control graphics
     engine = pyre.engine.Engine()
-    engine.junk = junk
 
     # make a bunch of Spins and associate them with Cubes (subclass of Avatar)
     tex_dict = {'red': pyre.engine.tex_coord((0, 0), 4),
                 'blue': pyre.engine.tex_coord((1, 0), 4)}
+
+    state_dict = {True: ('red',)*6, False: ('blue',)*6}
+
     spin_list = [[0 for _ in range(2*CRYSTAL_SIZE)] for _ in range(2*CRYSTAL_SIZE)]
     """:type: list[list[Spin]]"""
+
     for i in range(-CRYSTAL_SIZE, CRYSTAL_SIZE):
         for j in range(-CRYSTAL_SIZE, CRYSTAL_SIZE):
-            cube = Cube(texture_group, engine.batch, tex_dict=tex_dict, size=(0.8, 0.8, 0.8))
+            cube = Cube(texture_group, engine.batch,
+                        tex_dict=tex_dict, state_dict=state_dict,
+                        size=(0.8, 0.8, 0.8))
             spin = Spin(position=(i, j, 0), avatar=cube, spin=random.random() > 0.3)
-            spin.ai = game_of_life
+            spin.swap_ai(pyre.ai.GameOfLife)
             engine.add_agent(spin)
             spin_list[i][j] = spin
 
@@ -58,18 +49,10 @@ def main():
     window.setup()
     window.minimize()
 
+    # rpyc service for remote access
+    pyre.engine.start_server(window)
+
     window.run()
-
-
-def start_server(my_service):
-    # start the rpyc server
-    server = ThreadedServer(my_service, port=12345,
-                            protocol_config={"allow_all_attrs": True,
-                                             "allow_setattr": True,
-                                             "allow_pickle": True})
-    t = Thread(target=server.start)
-    t.daemon = True
-    t.start()
 
 
 if __name__ == '__main__':

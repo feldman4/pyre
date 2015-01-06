@@ -1,52 +1,65 @@
-import copy
+import types
 from pyglet import image
 import numpy as np
 from pyglet.gl import GL_QUADS
 from pyglet.graphics import Batch, TextureGroup
-import pyre.ai
 import time
+import copy
+import pyre.ai
 
 
 class Agent(object):
-    def __init__(self, avatar=None, visible=False, position=None):
-        """
+    def __init__(self, avatar=None, visible=False, position=None,
+                 rotation=None):
+        """Represents an entity physically embodied by an Avatar and updated by an AI
 
         :param bool avatar:
-        :param bool visible:
-        :param tuple position:
+        :param bool visible: whether to show
+        :param tuple position: (x,y,z)
+        :param tuple rotation: (theta, phi)
         :return:
         """
 
         self.avatar = avatar
         self.visible = visible
         self.position = position
+        self.rotation = rotation
         self.guise_state = {}
-        self.ai = None
-        self.whatever = lambda x: x**2
+        self.t = 0
+        self.ai = pyre.ai.AI(self)
 
     def update(self, dt):
-        """Updates agent internal state.
+        """Updates AI, then updates avatar, then shows avatar.
 
         :param float dt: Real time interval since last update.
         :return:
         """
+        self.t += dt
+        self.update_ai(dt)
         if self.avatar:
-            self.avatar.position = self.position
-            # FIXME add rotation
-            self.avatar.show()
+            self.update_avatar()
+
+    def update_ai(self, dt):
+        """Call AI object's update function.
+
+        :param dt: Real time interval since last update.
+        :return:
+        """
+        self.ai.update(dt)
+        pass
+
+    def update_avatar(self):
+        """Updates state of Avatar to reflect Agent.
+
+        :return:
+        """
+        self.avatar.position = self.position
+        self.avatar.rotation = self.rotation
+        self.avatar.show()
 
     def __del__(self):
         if self.avatar:
             self.avatar.delete()
-
-
-class Critter(Agent):
-    def __init__(self, position, color='undecided', visible=False, *args, **kwargs):
-        super(Critter, self).__init__(*args, **kwargs)
-
-        self.color = color
-        self.position = position
-        self.visible = visible
 
 
 class Spin(Agent):
@@ -61,32 +74,25 @@ class Spin(Agent):
         self.spin = spin
         self.neighbors = []
         self.lifetime = 0.3
-        self.t = 0
-        self.next_ai = pyre.ai.game_of_life
         """:type : list[Agent]"""
         if not avatar_state:
             self.avatar_state = {True: 'red', False: 'blue'}
         else:
             self.avatar_state = avatar_state
 
-    def update(self, dt):
-        """Flip spin, then do Agent update.
-
-        :param dt:
-        :return:
-        """
-        self.t += dt
-        if self.t > self.lifetime:
-            self.flip()
-            self.t = 0
-        super(Spin, self).update(dt)
-
-
     def neighbor_sum(self):
         return sum(n.spin for n in self.neighbors)
 
-    def new_ai(self, func):
-        self.ai = copy.deepcopy(func)
+    def swap_ai(self, ai):
+        self.ai = copy.deepcopy(ai)(self)
+
+    def update_avatar(self):
+        """Update linked Avatar with possible states True, False
+
+        :return:
+        """
+        self.avatar.state = self.spin
+        super(Spin, self).update_avatar()
 
     def flip(self):
         """Flip spin.
@@ -94,20 +100,7 @@ class Spin(Agent):
         :return: Spin after flip
         :rtype: bool
         """
-        # self.spin = not self.spin
-        up = ('red',)*6
-        down = ('blue',)*6
-
-
-        self.spin = self.ai(self.spin, self.neighbor_sum())
-
-        if self.avatar:
-            if self.spin:
-                self.avatar.faces = up
-            else:
-                self.avatar.faces = down
-
-        return self.spin
+        self.spin = not self.spin
 
     def link_neighbor(self, spin):
         """Add a neighboring spin.
@@ -132,7 +125,7 @@ class Spin(Agent):
 
 
 class Avatar(object):
-    def __init__(self, texture_group, batch, tex_dict=None):
+    def __init__(self, texture_group, batch, tex_dict=None, state_dict=None):
         """Visual manifestation of Agent. Manipulated by the Agent's update method.
         Graphics:
             The Avatar is informed of a Batch, which it uses to track any VertexLists it creates.
@@ -140,17 +133,26 @@ class Avatar(object):
         :param TextureGroup texture_group: Binds Texture containing all textures.
         :param Batch batch: Master Batch located in Engine.
         :param dict tex_dict: Dictionary to look up texture coordinates. Usage depends on subclass.
+        :param dict state_dict: Dictionary with self.state as key, returns tuple of keys to tex_dict
+                                (exact form depends on subclass).
         :return:
         """
         self.texture_group = texture_group
+        self.batch = batch
         self.tex_dict = tex_dict
+        self.state_dict = state_dict
+
         self.vertex_lists = []
         """:type: list[pyglet.graphics.vertexdomain.VertexList]"""
         self.position = (0, 0, 0)
         self.rotation = (0, 0)
-        self.batch = batch
+
+        self.state = None
 
     def show(self):
+        """ Update Avatar state based on state dict
+        :return:
+        """
         pass
 
 
@@ -171,20 +173,21 @@ CUBE_BOTTOM = [0, 2, 6, 4]
 
 
 class Cube(Avatar):
-    def __init__(self, texture_group, batch, size=(1, 1, 1), faces=('red',)*6, tex_dict=None):
+    def __init__(self, texture_group, batch, size=(1, 1, 1),
+                 tex_dict=None, state_dict=None):
         """
 
         :param TextureGroup texture_group: Contains textures for Cube faces.
         :param Batch batch: pyglet Batch to which VertexList is added
-        :param size:
-        :param tuple faces: list of keys into tex_dict for each face, (TOP, BOTTOM, FRONT, BACK, LEFT, RIGHT)
-        :param tex_dict: contains tex_coords in texture_group corresponding to keys in faces
+        :param tuple size: (x,y,z) extension of cube (more like a rectangular prism)
+        :param dict state_dict: Keys are True, False; entries are tuple of keys into tex_dict
+                                    for each face, (TOP, BOTTOM, FRONT, BACK, LEFT, RIGHT)
+        :param dict tex_dict: contains tex_coords in texture_group corresponding to keys in faces
         :return:
         """
-        super(Cube, self).__init__(texture_group, batch, tex_dict=tex_dict)
+        super(Cube, self).__init__(texture_group, batch, tex_dict=tex_dict, state_dict=state_dict)
 
         self.size = size
-        self.faces = faces
 
     # noinspection PyTypeChecker
     def cube_vertices(self):
@@ -202,8 +205,9 @@ class Cube(Avatar):
 
         :return:
         """
+        faces = self.state_dict[self.state]
         vertex_data = self.cube_vertices()
-        tex_coords = [x for face in self.faces for x in self.tex_dict[face]]
+        tex_coords = [x for face in faces for x in self.tex_dict[face]]
 
         if not self.vertex_lists:
             # create vertex list

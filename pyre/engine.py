@@ -1,6 +1,7 @@
 import math
+import threading
 import numpy as np
-import time
+import rpyc.utils.server
 from agent import Agent
 from pyglet.gl import *
 from pyglet.graphics import TextureGroup
@@ -31,8 +32,6 @@ class Engine(object):
         if self.agents_update:
             for agent in self.agents:
                 agent.update(dt)
-        self.junk
-
 
     def draw(self):
         self.batch.draw()
@@ -267,10 +266,29 @@ def tex_coord(position, n=4):
     dy = position[1] * m
     return dx, dy, dx + m, dy, dx + m, dy + m, dx, dy + m
 
+# functions to set up rpyc connection
 
-def monkey(engine):
-    import types
-    import pyre.ai
+PORT = 12345
+PROTOCOL_CONFIG = {"allow_all_attrs": True,
+                   "allow_setattr": True,
+                   "allow_pickle": True}
 
-    for a in engine.agents:
-        a.ai = types.MethodType(lambda x: None, a)
+
+def start_server(window):
+    class ServerService(rpyc.Service):
+        def exposed_get_window(self):
+            return window
+    # start the rpyc server
+    server = rpyc.utils.server.ThreadedServer(ServerService, port=12345, protocol_config=PROTOCOL_CONFIG)
+    t = threading.Thread(target=server.start)
+    t.daemon = True
+    t.start()
+
+
+def start_client():
+    class ServerService(rpyc.Service):
+        pass
+
+    conn = rpyc.connect("localhost", 12345, service=ServerService, config=PROTOCOL_CONFIG)
+    rpyc.BgServingThread(conn)
+    return conn
