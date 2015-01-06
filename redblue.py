@@ -4,8 +4,6 @@ from pyre.agent import Spin, Cube
 import pyglet
 import pyglet.graphics
 import random
-import types
-import time
 
 
 CRYSTAL_SIZE = 4
@@ -57,4 +55,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

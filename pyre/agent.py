@@ -1,9 +1,6 @@
-import types
-from pyglet import image
 import numpy as np
 from pyglet.gl import GL_QUADS
 from pyglet.graphics import Batch, TextureGroup
-import time
 import copy
 import pyre.ai
 
@@ -219,5 +216,3 @@ class Cube(Avatar):
 
     def hide(self):
         self.vertex_lists[0].delete()
-
-

@@ -4,9 +4,7 @@ import numpy as np
 import rpyc.utils.server
 from agent import Agent
 from pyglet.gl import *
-from pyglet.graphics import TextureGroup
-from pyglet.window import key, mouse
-from pyglet import image
+from pyglet.window import key
 
 
 class Engine(object):
@@ -104,6 +102,7 @@ class Window(pyglet.window.Window):
             Tuple containing the velocity in x, y, and z respectively.
 
         """
+        dx, dy, dz = 0.0, 0.0, 0.0
         if any(self.strafe):
             x, y = self.rotation
             strafe = math.degrees(math.atan2(*self.strafe))
@@ -124,11 +123,7 @@ class Window(pyglet.window.Window):
                 dx = math.cos(x_angle) * m
                 dz = math.sin(x_angle) * m
 
-        else:
-            dy = 0.0
-            dx = 0.0
-            dz = 0.0
-        return (dx, dy, dz)
+        return dx, dy, dz
 
     def on_mouse_press(self, x, y, button, modifiers):
         """Called when a mouse button is pressed.
@@ -182,7 +177,6 @@ class Window(pyglet.window.Window):
             self.set_exclusive_mouse(False)
         elif symbol == key.TAB:
             self.flying = not self.flying
-
 
     def on_key_release(self, symbol, modifiers):
         """ Called when the player releases a key. See pyglet docs for key
