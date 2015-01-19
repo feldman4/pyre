@@ -4,17 +4,20 @@ from pyre.agent import Spin, Cube
 import pyglet
 import pyglet.graphics
 import random
-
+import os
 
 CRYSTAL_SIZE = 4
 
 
 def main():
 
+    window = None
+    if os.name == 'nt':
+        window = pyre.engine.Window(width=800, height=600, caption='Pyglet', resizable=True)
+
     # load file with face textures and make a group of it
     texture_region = pyglet.resource.texture('texture.png')
     texture_group = pyglet.graphics.TextureGroup(texture_region)
-
     # make an engine to control graphics
     engine = pyre.engine.Engine()
 
@@ -42,7 +45,10 @@ def main():
             for m, n in ((-1, 0), (1, 0), (0, -1), (0, 1)):
                 spin_list[i][j].link_neighbor(spin_list[i + m][j+n])
 
-    window = pyre.engine.Window(width=800, height=600, caption='Pyglet', resizable=True, engine=engine)
+    if os.name == 'posix':
+        window = pyre.engine.Window(width=800, height=600, caption='Pyglet', resizable=True)
+
+    window.engine = engine
     window.position = (0, 0, 8)
     window.setup()
     window.minimize()

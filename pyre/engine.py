@@ -286,3 +286,11 @@ def start_client():
     conn = rpyc.connect("localhost", 12345, service=ServerService, config=PROTOCOL_CONFIG)
     rpyc.BgServingThread(conn)
     return conn
+
+
+def main():
+    window = Window(width=800, height=600, caption='Pyglet', resizable=True)
+    window.run()
+
+if __name__ == '__main__':
+    main()
