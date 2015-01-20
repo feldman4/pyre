@@ -252,7 +252,7 @@ def tex_coord(position, n=4):
     """Returns the bounding vertices of a square inside Texture.
 
     :param tuple|list position: standard (x,y) coordinate within Texture
-    :param n:
+    :param n: number of images along one side
     :return:
     """
     m = 1.0 / n

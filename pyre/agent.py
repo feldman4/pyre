@@ -6,14 +6,15 @@ import pyre.ai
 
 
 class Agent(object):
-    def __init__(self, avatar=None, visible=False, position=None,
-                 rotation=None):
+    def __init__(self, avatar=None, visible=False, position=None, guises=None,
+                 rotation=None, size=(1, 1, 1), texture_group=None, batch=None):
         """Represents an entity physically embodied by an Avatar and updated by an AI
 
         :param bool avatar:
         :param bool visible: whether to show
         :param tuple position: (x,y,z)
         :param tuple rotation: (theta, phi)
+        :param dict guises: Avatars corresponding to Agent state, must be initialized when Agent is created
         :return:
         """
 
@@ -21,7 +22,11 @@ class Agent(object):
         self.visible = visible
         self.position = position
         self.rotation = rotation
-        self.guise_state = {}
+        self.size = size
+        self.texture_group = texture_group
+        self.batch = batch
+        self.guises = guises
+        """:type : dict:"""
         self.t = 0
         self.ai = pyre.ai.AI(self)
 
@@ -35,6 +40,9 @@ class Agent(object):
         self.update_ai(dt)
         if self.avatar:
             self.update_avatar()
+
+    def swap_ai(self, ai):
+        self.ai = copy.deepcopy(ai)(self)
 
     def update_ai(self, dt):
         """Call AI object's update function.
@@ -52,6 +60,7 @@ class Agent(object):
         """
         self.avatar.position = self.position
         self.avatar.rotation = self.rotation
+        self.avatar.size = self.size
         self.avatar.show()
 
     def __del__(self):
@@ -70,8 +79,9 @@ class Spin(Agent):
 
         self.spin = spin
         self.neighbors = []
+        """:type : list[Spin]"""
         self.lifetime = 0.3
-        """:type : list[Agent]"""
+
         if not avatar_state:
             self.avatar_state = {True: 'red', False: 'blue'}
         else:
@@ -79,9 +89,6 @@ class Spin(Agent):
 
     def neighbor_sum(self):
         return sum(n.spin for n in self.neighbors)
-
-    def swap_ai(self, ai):
-        self.ai = copy.deepcopy(ai)(self)
 
     def update_avatar(self):
         """Update linked Avatar with possible states True, False
@@ -152,6 +159,8 @@ class Avatar(object):
         """
         pass
 
+    def hide(self):
+        pass
 
 CUBE_VERTICES = [[0, 0, 0],
                  [0, 0, 1],

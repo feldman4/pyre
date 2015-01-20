@@ -1,5 +1,6 @@
 # noinspection PyUnresolvedReferences
 from agent import Spin, Agent
+from garden import Worm
 
 
 class AI(object):
@@ -50,4 +51,17 @@ class GameOfLife(AI):
             self.agent.spin = True
 
         return self.agent.spin
+
+
+class WormAI(AI):
+    def __init__(self, worm, lifetime=1, *args, **kwargs):
+        super(WormAI, self).__init__(worm, *args, **kwargs)
+        self.last_evolved_t = self.t
+        self.lifetime = lifetime
+
+    def update(self, dt):
+        super(WormAI, self).update(dt)
+        if self.t - self.last_evolved_t > self.lifetime:
+            self.agent.evolve()
+            self.last_evolved_t = self.t
 
