@@ -7,7 +7,8 @@ import pyre.ai
 
 class Agent(object):
     def __init__(self, avatar=None, visible=False, position=None, guises=None,
-                 rotation=None, size=(1, 1, 1), texture_group=None, batch=None):
+                 velocity=None, angular_velocity=None,
+                 rotation=None, size=np.array([1, 1, 1]), texture_group=None, batch=None):
         """Represents an entity physically embodied by an Avatar and updated by an AI
 
         :param bool avatar:
@@ -22,6 +23,8 @@ class Agent(object):
         self.visible = visible
         self.position = position
         self.rotation = rotation
+        self.velocity = velocity
+        self.angular_velocity = angular_velocity
         self.size = size
         self.texture_group = texture_group
         self.batch = batch
@@ -37,12 +40,14 @@ class Agent(object):
         :return:
         """
         self.t += dt
+        self.position += dt * self.velocity
+        self.rotation += dt * self.angular_velocity
         self.update_ai(dt)
         if self.avatar:
             self.update_avatar()
 
-    def swap_ai(self, ai):
-        self.ai = copy.deepcopy(ai)(self)
+    def swap_ai(self, ai, *args, **kwargs):
+        self.ai = copy.deepcopy(ai)(self, *args, **kwargs)
 
     def update_ai(self, dt):
         """Call AI object's update function.

@@ -39,7 +39,7 @@ def main():
                         'plant': Plant(texture_group, engine.batch, tex_dict=tex_dict),
                         'slug': Slug(texture_group, engine.batch, tex_dict=tex_dict),
                         })
-        worm.swap_ai(pyre.ai.WormAI)
+        worm.swap_ai(pyre.garden.WormAI)
         engine.add_agent(worm)
 
     if os.name == 'posix':
