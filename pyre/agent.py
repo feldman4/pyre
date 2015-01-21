@@ -139,7 +139,8 @@ class Spin(Agent):
 
 
 class Avatar(object):
-    def __init__(self, texture_group, batch, tex_dict=None, state_dict=None):
+    def __init__(self, texture_group, batch, tex_dict=None, state_dict=None,
+                 position=None, rotation=None):
         """Visual manifestation of Agent. Manipulated by the Agent's update method.
         Graphics:
             The Avatar is informed of a Batch, which it uses to track any VertexLists it creates.
@@ -155,11 +156,10 @@ class Avatar(object):
         self.batch = batch
         self.tex_dict = tex_dict
         self.state_dict = state_dict
-
+        self.position = position
+        self.rotation = rotation
         self.vertex_lists = []
         """:type: list[pyglet.graphics.vertexdomain.VertexList]"""
-        self.position = (0, 0, 0)
-        self.rotation = (0, 0)
 
         self.state = None
 
@@ -266,4 +266,4 @@ def rotate_vertices(vertices, rotation):
     :return:
     """
     r = rotation_matrix(rotation)
-    return r['z'].dot(r['y'].dot(r['z'])).dot(vertices.T).T
+    return r['z'].dot(r['y'].dot(r['x'])).dot(vertices.T).T

@@ -7,11 +7,10 @@ from pyre.ai import AI
 import pyre.agent
 
 # TODO move Worm functionality to PhysicalAgent or somesuch, same for SquareAvatar from GardenAvatar
-
+# TODO clean up where parameters are set for garden agents/ais
 
 class Worm(Agent):
-    def __init__(self, initial_state='slug', position=np.array([0., 0., 0.]), rotation=np.array([0., 0., 0.]),
-                 angular_velocity=np.array([0., 0., 0.]), color=(255, 0, 0), speed=0, lifetime=10,
+    def __init__(self, initial_state='slug', color=(255, 0, 0), speed=0, lifetime=10,
                  *args, **kwargs):
         """
         Its lifecycle has four states.
@@ -22,9 +21,10 @@ class Worm(Agent):
         :return:
         """
         super(Worm, self).__init__(*args, **kwargs)
-        self.position = position
-        self.rotation = rotation
-        self.angular_velocity = angular_velocity
+        if self.rotation is None:
+            self.rotation = np.array([0., 0., 0.])
+        if self.angular_velocity is None:
+            self.angular_velocity = np.array([0., 0., 0.])
         self.state = initial_state
         self.lifetime = lifetime
         self.color = color
@@ -35,21 +35,25 @@ class Worm(Agent):
 
     def evolve(self):
         self.state = self.lifecycle[(self.lifecycle.index(self.state) + 1) % len(self.lifecycle)]
-        self.state = 'butterfly'
         self.avatar.hide()
         self.avatar = self.guises[self.state]
+        # print id(self.avatar.rotation)
         if self.state == 'butterfly':
             self.swap_ai(ButterflyAI)
             # remember butterfly rotation
             self.rotation = self.avatar.rotation
+            self.lifetime = 8
+            self.ai.lifetime = self.lifetime
         if self.state != 'butterfly':
             self.swap_ai(WormAI)
             self.rotation = np.array([0., 0., 0.])
             self.angular_velocity = np.array([0., 0., 0.])
+            self.lifetime = 1
+            self.ai.lifetime = self.lifetime
 
 
 class GardenAvatar(Avatar):
-    def __init__(self, texture_group, batch, rotation=np.array([0., 0., 0.]),
+    def __init__(self, texture_group, batch,
                  size=(1, 1, 1), color=(255, 0, 0), *args, **kwargs):
         """
             Parent class for garden-variety Avatars.
@@ -59,7 +63,8 @@ class GardenAvatar(Avatar):
         super(GardenAvatar, self).__init__(texture_group, batch, *args, **kwargs)
         self.color = color
         self.size = size
-        self.rotation = rotation
+        if self.rotation is None:
+            self.rotation = np.array([0., 0., 0.])
         self.SQUARE_VERTICES = [[0, 0, 0],
                                 [1, 0, 0],
                                 [1, 1, 0],
@@ -133,8 +138,8 @@ class WormAI(AI):
 
 
 class ButterflyAI(WormAI):
-    def __init__(self, worm, k_theta=0.5, noise_theta=0., sine_amp_theta=0.02,
-                 sine_period_theta=2, *args, **kwargs):
+    def __init__(self, worm, k_theta=0.2, noise_theta=2, sine_amp_theta=3,
+                 sine_period_theta=1, *args, **kwargs):
         """
 
         :param Worm worm: agent controlled by AI
@@ -158,11 +163,8 @@ class ButterflyAI(WormAI):
         :return:
         """
 
-        self.agent.angular_velocity[2] += dt * self.sine_amp_theta * math.sin(self.t / self.sine_period_theta)
+        self.agent.rotation[2] += dt * self.sine_amp_theta * math.sin(2*math.pi* self.t / self.sine_period_theta)
         self.agent.angular_velocity[2] += self.noise_theta * dt * (random.random() - 0.5)
-        self.agent.angular_velocity += -1 * self.agent.angular_velocity * dt * self.k_theta
-        # depends on the direction considered forward, assume x axis
-        self.agent.position += self.agent.speed * pyre.agent.rotate_vertices(np.eye(3), self.agent.rotation).sum(1)
+        # self.agent.angular_velocity += -1 * self.agent.angular_velocity * dt * self.k_theta
+        self.agent.position += dt * pyre.agent.rotate_vertices(self.agent.speed, self.agent.rotation)
         super(ButterflyAI, self).update(dt)
-        print pyre.agent.rotate_vertices(np.eye(3), self.agent.rotation).sum(1)
-

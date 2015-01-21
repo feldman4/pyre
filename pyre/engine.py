@@ -15,6 +15,9 @@ class Engine(object):
         """:type: list[Agent]"""
         self.world_mesh = {}
         self.agents_update = True
+        # modifies the dt passed from Window
+        self.timing_fcn = lambda x: x
+        self.go = False
 
         self.batch = pyglet.graphics.Batch()
 
@@ -25,11 +28,22 @@ class Engine(object):
         """
         self.agents.append(agent)
 
+    def step(self):
+        self.go = True
+
+    def latch_timer(self, dt):
+        if self.go:
+            self.go = False
+            return dt
+        return 0
+
     def update(self, dt):
+        dt = self.timing_fcn(dt)
         self.t += dt
         if self.agents_update:
             for agent in self.agents:
                 agent.update(dt)
+            # print "time: {}, position: {}, w: {}".format(self.agents[0].t,self.agents[0].rotation, self.agents[0].angular_velocity)
 
     def draw(self):
         self.batch.draw()
