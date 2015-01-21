@@ -7,14 +7,15 @@ import pyre.ai
 
 class Agent(object):
     def __init__(self, avatar=None, visible=False, position=None, guises=None,
-                 velocity=None, angular_velocity=None,
+                 velocity=None, angular_velocity=None, speed=None,
                  rotation=None, size=np.array([1, 1, 1]), texture_group=None, batch=None):
         """Represents an entity physically embodied by an Avatar and updated by an AI
 
         :param bool avatar:
         :param bool visible: whether to show
-        :param tuple position: (x,y,z)
-        :param tuple rotation: (theta, phi)
+        :param numpy.ndarray position: (x,y,z)
+        :param numpy.ndarray rotation: (theta, phi)
+        :param float speed:
         :param dict guises: Avatars corresponding to Agent state, must be initialized when Agent is created
         :return:
         """
@@ -24,6 +25,7 @@ class Agent(object):
         self.position = position
         self.rotation = rotation
         self.velocity = velocity
+        self.speed = speed
         self.angular_velocity = angular_velocity
         self.size = size
         self.texture_group = texture_group
@@ -40,8 +42,11 @@ class Agent(object):
         :return:
         """
         self.t += dt
-        self.position += dt * self.velocity
-        self.rotation += dt * self.angular_velocity
+        if self.position is not None and self.velocity is not None:
+            self.position += dt * self.velocity
+        if self.rotation is not None and self.angular_velocity is not None:
+            self.rotation += dt * self.angular_velocity
+
         self.update_ai(dt)
         if self.avatar:
             self.update_avatar()
@@ -167,6 +172,7 @@ class Avatar(object):
     def hide(self):
         pass
 
+
 CUBE_VERTICES = [[0, 0, 0],
                  [0, 0, 1],
                  [0, 1, 0],
@@ -230,3 +236,34 @@ class Cube(Avatar):
 
     def hide(self):
         self.vertex_lists[0].delete()
+
+
+def rotation_matrix(rotation):
+    """
+    Builds three sequential rotation matrices parametrized by rotation angles about
+    x, y, z axes.
+    :param np.array rotation: [x, y, z] basis rotation angles
+    :return dict: dictionary with x, y, z rotation matrices
+    """
+    x, y, z = rotation
+    return {'x': np.array([[1, 0, 0],
+                           [0, np.cos(x), -np.sin(x)],
+                           [0, np.sin(x), np.cos(x)]]),
+            'y': np.array([[np.cos(y), 0, np.sin(y)],
+                           [0, 1, 0],
+                           [-np.sin(y), 0, np.cos(y)]]),
+            'z': np.array([[np.cos(z), -np.sin(z), 0],
+                           [np.sin(z), np.cos(z), 0],
+                           [0, 0, 1]])
+            }
+
+
+def rotate_vertices(vertices, rotation):
+    """
+    Rotate array of vertices using [x,y,z] rotation angles provided in rotation
+    :param vertices:
+    :param rotation:
+    :return:
+    """
+    r = rotation_matrix(rotation)
+    return r['z'].dot(r['y'].dot(r['z'])).dot(vertices.T).T

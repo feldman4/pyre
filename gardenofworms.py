@@ -6,9 +6,10 @@ import pyglet
 import pyglet.graphics
 import random
 import os
+import numpy as np
 
 NUM_SEEDS = 20
-GARDEN_LENGTH = 20
+GARDEN_LENGTH = 1
 
 
 def main():
@@ -31,8 +32,8 @@ def main():
     for i in range(NUM_SEEDS):
         spacing = GARDEN_LENGTH / math.sqrt(NUM_SEEDS)
         sz = 0.66 + random.random() / 3
-        worm = Worm(position=(random.random() * spacing, random.random() * spacing, 0),
-                    size=(sz, sz, sz),
+        worm = Worm(position=np.array([random.random() * spacing, random.random() * spacing, 0]),
+                    size=(sz, sz, sz), speed=np.array([0, .05, 0]),
                     guises={
                         'butterfly': Butterfly(texture_group, engine.batch, tex_dict=tex_dict),
                         'seed': Seed(texture_group, engine.batch, tex_dict=tex_dict),
@@ -48,7 +49,7 @@ def main():
     window.engine = engine
     window.position = (0, 0, 8)
     window.setup()
-    window.minimize()
+    # window.minimize()
 
     # rpyc service for remote access
     pyre.engine.start_server(window)

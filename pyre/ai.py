@@ -1,12 +1,12 @@
 # noinspection PyUnresolvedReferences
-from agent import Spin, Agent
+import pyre.agent
 
 
 class AI(object):
     def __init__(self, agent, *args, **kwargs):
         """
 
-        :param Agent agent:
+        :param pyre.agent.Agent agent:
         :return:
         """
         self.agent = agent
@@ -22,12 +22,12 @@ class GameOfLife(AI):
     def __init__(self, spin):
         """
 
-        :param Spin spin:
+        :param pyre.agent.Spin spin:
         :return:
         """
         super(GameOfLife, self).__init__(spin)
         self.agent = spin
-        """:type: Spin"""
+        """:type: pyre.agent.Spin"""
 
         self.lifetime = 1
         self.last_flip_t = self.t
