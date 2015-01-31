@@ -23,7 +23,7 @@ def main():
     # make an engine to control graphics
     engine = pyre.engine.Engine()
 
-    # coordinates within garden.png (subclass of Avatar)
+    # coordinates within garden.png
     tex_dict = {'slug': pyre.engine.tex_coord((0, 1), 4),
                 'plant': pyre.engine.tex_coord((0, 0), 4),
                 'butterfly': pyre.engine.tex_coord((1, 0), 4),
@@ -35,7 +35,13 @@ def main():
         worm = Worm(position=np.array([random.random() * spacing - spacing/2,
                                        random.random() * spacing - spacing/2,
                                        0]),
-                    size=(sz, sz, sz), speed=np.array([0, 2, 0]), lifetime=1,
+                    size=(sz, sz, sz), butterfly_speed=np.array([0, 2, 0]),
+                    lifetimes={
+                        'butterfly': 6,
+                        'seed': 1.5,
+                        'plant': 1,
+                        'slug': 1},
+                    lifecycle=('butterfly', 'seed', 'plant', 'slug'),
                     guises={
                         'butterfly': Butterfly(texture_group, engine.batch, tex_dict=tex_dict),
                         'seed': Seed(texture_group, engine.batch, tex_dict=tex_dict),

@@ -1,40 +1,35 @@
 import math
 import random
-from pyglet.gl import GL_QUADS
-from agent import Agent, Avatar
 import numpy as np
-from pyre.ai import AI
+import pyre.ai
 import pyre.agent
 
-# TODO move Worm functionality to PhysicalAgent or somesuch, same for SquareAvatar from GardenAvatar
-# TODO clean up where parameters are set for garden agents/ais
 
-class Worm(Agent):
-    def __init__(self, initial_state='slug', color=(255, 0, 0), speed=0, lifetime=10,
-                 *args, **kwargs):
-        """
-        Its lifecycle has four states.
+class Worm(pyre.agent.PhysicalAgent):
+    def __init__(self, initial_state='slug', color=(255, 0, 0), butterfly_speed=None,
+                 lifecycle={'butterfly', 'seed', 'plant', 'slug'}, lifetimes=None, *args, **kwargs):
+        """An Agent that evolves through lifecycle states with given lifetimes.
         :param string initial_state:
         :param tuple color: an RGB tuple, e.g., (255, 0, 0)
+        :param tuple lifecycle: a tuple of states through which the Agent evolves
+        :param dict lifetimes: a dictionary mapping lifetimes to lifecycle states
         :param args:
         :param kwargs:
         :return:
         """
         super(Worm, self).__init__(*args, **kwargs)
-        if self.rotation is None:
-            self.rotation = np.array([0., 0., 0.])
-        if self.angular_velocity is None:
-            self.angular_velocity = np.array([0., 0., 0.])
         self.state = initial_state
-        self.lifetime = lifetime
         self.color = color
         self.avatar = self.guises[self.state]
         self.update_avatar()
-        self.lifecycle = ['butterfly', 'seed', 'plant', 'slug']
-        self.speed = speed
+        self.lifecycle = lifecycle
+        self.lifetimes = dict(zip(self.lifecycle), [1] * 4) if lifetimes is None else lifetimes
+        self.lifetime = self.lifetimes[self.state]
+        self.butterfly_speed = np.array([0., 1., 0.]) if butterfly_speed is None else butterfly_speed
 
     def evolve(self):
         self.state = self.lifecycle[(self.lifecycle.index(self.state) + 1) % len(self.lifecycle)]
+        self.lifetime = self.lifetimes[self.state]
         self.avatar.hide()
         self.avatar = self.guises[self.state]
         # print id(self.avatar.rotation)
@@ -42,62 +37,17 @@ class Worm(Agent):
             self.swap_ai(ButterflyAI)
             # remember butterfly rotation
             self.rotation = self.avatar.rotation
-            self.lifetime = 8
             self.ai.lifetime = self.lifetime
         if self.state != 'butterfly':
             self.swap_ai(WormAI)
             self.rotation = np.array([0., 0., 0.])
+            self.velocity = np.array([0., 0., 0.])
             self.angular_velocity = np.array([0., 0., 0.])
-            self.lifetime = 1
             self.ai.lifetime = self.lifetime
 
 
-class GardenAvatar(Avatar):
-    def __init__(self, texture_group, batch,
-                 size=(1, 1, 1), color=(255, 0, 0), *args, **kwargs):
-        """
-            Parent class for garden-variety Avatars.
-            :param color:
-            :return:
-            """
-        super(GardenAvatar, self).__init__(texture_group, batch, *args, **kwargs)
-        self.color = color
-        self.size = size
-        if self.rotation is None:
-            self.rotation = np.array([0., 0., 0.])
-        self.SQUARE_VERTICES = [[0, 0, 0],
-                                [1, 0, 0],
-                                [1, 1, 0],
-                                [0, 1, 0]]
-
-    def square_vertices(self):
-        vertices = np.array(self.SQUARE_VERTICES)
-        vertices = np.array((vertices - 0.5) * self.size)
-        vertices = pyre.agent.rotate_vertices(vertices, self.rotation) + self.position
-        return vertices.flatten()
-
-    def show(self):
-        super(GardenAvatar, self).show()
-        """Add a VertexList to the Batch or update existing.
-
-            :return:
-            """
-        tex_coords = self.tex_dict[self.state_dict[self.state]]
-        vertex_data = self.square_vertices()
-
-        # detect weird dangling reference
-        if self.vertex_lists and len(self.vertex_lists):
-            self.vertex_lists[0].vertices = vertex_data
-            self.vertex_lists[0].tex_coords = tex_coords
-
-        else:
-            # create vertex list
-            self.vertex_lists = [self.batch.add(4, GL_QUADS, self.texture_group,
-                                                ('v3f', vertex_data), ('t2f', tex_coords))]
-
-    def hide(self):
-        self.vertex_lists[0].delete()
-        self.vertex_lists = None
+class GardenAvatar(pyre.agent.Avatar2D):
+    pass
 
 
 class Slug(GardenAvatar):
@@ -124,7 +74,7 @@ class Butterfly(GardenAvatar):
         self.state_dict = {None: 'butterfly'}
 
 
-class WormAI(AI):
+class WormAI(pyre.ai.PhysicalAI):
     def __init__(self, worm, lifetime=1, *args, **kwargs):
         super(WormAI, self).__init__(worm, *args, **kwargs)
         self.last_evolved_t = self.t
@@ -139,14 +89,15 @@ class WormAI(AI):
 
 class ButterflyAI(WormAI):
     def __init__(self, worm, k_theta=0.2, noise_theta=2, sine_amp_theta=3,
-                 sine_period_theta=1, *args, **kwargs):
+                 sine_period_theta=1, sine_phase=0, *args, **kwargs):
         """
 
         :param Worm worm: agent controlled by AI
         :param float k_theta: rate of relaxation of noise-induced momentum
-        :param float sine_amp_theta: amplitude of steady sinusoidal rotation
+        :param float sine_amp_theta: 1/2 peak-to-peak amplitude of steady sinusoidal rotation, in radians
         :param float sine_T_theta: period of steady sinusoidal rotation
-        :param float noise_theta: amplitude of noise changing momentum
+        :param float noise_theta: amplitude of noise changing momentum, in radians
+        :param float sine_phase: phase offset of steady sinusoidal rotation, in radians
         :return:
         """
         super(ButterflyAI, self).__init__(worm, *args, **kwargs)
@@ -154,6 +105,7 @@ class ButterflyAI(WormAI):
         self.noise_theta = noise_theta
         self.sine_amp_theta = sine_amp_theta
         self.sine_period_theta = sine_period_theta
+        self.sine_phase = sine_phase
 
     def update(self, dt):
         """
@@ -162,9 +114,9 @@ class ButterflyAI(WormAI):
         :param dt:
         :return:
         """
-
-        self.agent.rotation[2] += dt * self.sine_amp_theta * math.sin(2*math.pi* self.t / self.sine_period_theta)
+        # directly rotate without involving angular velocity, easier than keeping track
+        self.agent.rotation[2] += dt * self.sine_amp_theta * math.sin(
+            2 * math.pi * self.t / self.sine_period_theta + self.sine_phase)
         self.agent.angular_velocity[2] += self.noise_theta * dt * (random.random() - 0.5)
-        # self.agent.angular_velocity += -1 * self.agent.angular_velocity * dt * self.k_theta
-        self.agent.position += dt * pyre.agent.rotate_vertices(self.agent.speed, self.agent.rotation)
+        self.agent.speed = self.agent.butterfly_speed
         super(ButterflyAI, self).update(dt)

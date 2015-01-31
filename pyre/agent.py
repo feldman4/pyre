@@ -7,7 +7,6 @@ import pyre.ai
 
 class Agent(object):
     def __init__(self, avatar=None, visible=False, position=None, guises=None,
-                 velocity=None, angular_velocity=None, speed=None,
                  rotation=None, size=np.array([1, 1, 1]), texture_group=None, batch=None):
         """Represents an entity physically embodied by an Avatar and updated by an AI
 
@@ -24,9 +23,6 @@ class Agent(object):
         self.visible = visible
         self.position = position
         self.rotation = rotation
-        self.velocity = velocity
-        self.speed = speed
-        self.angular_velocity = angular_velocity
         self.size = size
         self.texture_group = texture_group
         self.batch = batch
@@ -42,11 +38,6 @@ class Agent(object):
         :return:
         """
         self.t += dt
-        if self.position is not None and self.velocity is not None:
-            self.position += dt * self.velocity
-        if self.rotation is not None and self.angular_velocity is not None:
-            self.rotation += dt * self.angular_velocity
-
         self.update_ai(dt)
         if self.avatar:
             self.update_avatar()
@@ -76,6 +67,26 @@ class Agent(object):
     def __del__(self):
         if self.avatar:
             self.avatar.delete()
+
+
+class PhysicalAgent(Agent):
+    def __init__(self, velocity=None, angular_velocity=None, speed=None, *args, **kwargs):
+        """An Agent that keeps track of its position, rotation, and corresponding velocities.
+        :param velocity:
+        :param angular_velocity:
+        :param numpy.array speed: acts same as velocity, but automatically rotated and intended to be
+            overwritten not incremented
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        super(PhysicalAgent, self).__init__(*args, **kwargs)
+
+        self.velocity = np.array([0., 0., 0.]) if velocity is None else velocity
+        self.angular_velocity = np.array([0., 0., 0.]) if angular_velocity is None else angular_velocity
+        self.speed = np.array([0., 0., 0.]) if speed is None else speed
+
+        self.rotation = np.array([0., 0., 0.]) if self.rotation is None else self.rotation
 
 
 class Spin(Agent):
@@ -173,6 +184,54 @@ class Avatar(object):
         pass
 
 
+class Avatar2D(Avatar):
+    def __init__(self, texture_group, batch,
+                 size=(1, 1, 1), color=(255, 0, 0), *args, **kwargs):
+        """Parent class for 2D Avatars, handles rotation before display.
+        :param color:
+        :return:
+        """
+        super(Avatar2D, self).__init__(texture_group, batch, *args, **kwargs)
+        self.color = color
+        self.size = size
+        if self.rotation is None:
+            self.rotation = np.array([0., 0., 0.])
+
+    def square_vertices(self):
+        """Get vertices of square after applying translation and rotation.
+        :return:
+        """
+        vertices = np.array(SQUARE_VERTICES)
+        vertices = np.array((vertices - 0.5) * self.size)
+        vertices = rotate_vertices(vertices, self.rotation) + self.position
+        return vertices.flatten()
+
+    def show(self):
+        """Add a VertexList to the Batch or update existing.
+        :return:
+        """
+        super(Avatar2D, self).show()
+        tex_coords = self.tex_dict[self.state_dict[self.state]]
+        vertex_data = self.square_vertices()
+
+        if not (self.vertex_lists and len(self.vertex_lists)):
+            # create vertex list
+            self.vertex_lists = [self.batch.add(4, GL_QUADS, self.texture_group,
+                                                ('v3f', vertex_data), ('t2f', tex_coords))]
+        else:
+            # update vertex list
+            self.vertex_lists[0].vertices = vertex_data
+            self.vertex_lists[0].tex_coords = tex_coords
+
+    def hide(self):
+        self.vertex_lists[0].delete()
+        self.vertex_lists = None
+
+
+SQUARE_VERTICES = [[0, 0, 0],
+                   [1, 0, 0],
+                   [1, 1, 0],
+                   [0, 1, 0]]
 CUBE_VERTICES = [[0, 0, 0],
                  [0, 0, 1],
                  [0, 1, 0],
@@ -192,8 +251,7 @@ CUBE_BOTTOM = [0, 2, 6, 4]
 class Cube(Avatar):
     def __init__(self, texture_group, batch, size=(1, 1, 1),
                  tex_dict=None, state_dict=None):
-        """
-
+        """A Cube with a dictionary defining the surface textures in each state.
         :param TextureGroup texture_group: Contains textures for Cube faces.
         :param Batch batch: pyglet Batch to which VertexList is added
         :param tuple size: (x,y,z) extension of cube (more like a rectangular prism)
@@ -209,17 +267,14 @@ class Cube(Avatar):
     # noinspection PyTypeChecker
     def cube_vertices(self):
         """Returns coordinates of cube after scaling, translation, rotation.
-
         :return: 24 x 3 array of vertex coordinates
         """
-        # FIXME add rotation
         vertices = np.array(CUBE_VERTICES)
-        vertices = (vertices - 0.5) * self.size + self.position
+        vertices = rotate_vertices((vertices - 0.5), self.rotation) * self.size + self.position
         return vertices[CUBE_TOP + CUBE_BOTTOM + CUBE_FRONT + CUBE_BACK + CUBE_LEFT + CUBE_RIGHT].flatten()
 
     def show(self):
         """Add a VertexList to the Batch or update existing.
-
         :return:
         """
         faces = self.state_dict[self.state]
@@ -255,12 +310,12 @@ def rotation_matrix(rotation):
             'z': np.array([[np.cos(z), -np.sin(z), 0],
                            [np.sin(z), np.cos(z), 0],
                            [0, 0, 1]])
-            }
+    }
 
 
 def rotate_vertices(vertices, rotation):
     """
-    Rotate array of vertices using [x,y,z] rotation angles provided in rotation
+    Rotate numpy array of vertices using [x,y,z] rotation angles provided in rotation
     :param vertices:
     :param rotation:
     :return:
