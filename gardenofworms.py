@@ -8,9 +8,9 @@ import random
 import os
 import numpy as np
 
-NUM_SEEDS = 30
-GARDEN_LENGTH = 100
-player = pyre.engine.FreePlayer
+NUM_SEEDS = 200
+GARDEN_LENGTH = 10
+player = pyre.engine.RTSPlayer
 
 
 def main():

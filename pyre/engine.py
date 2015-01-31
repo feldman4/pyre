@@ -10,7 +10,6 @@ from pyglet.window import key
 class Engine(object):
     def __init__(self, window=None):
         self.t = 0
-        self.junk = None
         self.agents = []
         """:type: list[Agent]"""
         self.world_mesh = {}
@@ -249,6 +248,13 @@ class Window(pyglet.window.Window):
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         # setup_fog()
+        glDepthFunc(GL_LEQUAL)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        glAlphaFunc(GL_GREATER, 0.1)
+        glEnable(GL_ALPHA_TEST)
 
     def run(self):
         pyglet.app.run()
