@@ -8,7 +8,7 @@ from pyglet.window import key
 
 
 class Engine(object):
-    def __init__(self):
+    def __init__(self, window=None):
         self.t = 0
         self.junk = None
         self.agents = []
@@ -19,23 +19,12 @@ class Engine(object):
         self.timing_fcn = lambda x: x
         self.go = False
 
+        self.window = window
         self.batch = pyglet.graphics.Batch()
+        self.player = Player(self)
 
     def add_agent(self, agent):
-        """This adds agents.
-
-        :param Agent agent: this is an agent
-        """
         self.agents.append(agent)
-
-    def step(self):
-        self.go = True
-
-    def latch_timer(self, dt):
-        if self.go:
-            self.go = False
-            return dt
-        return 0
 
     def update(self, dt):
         dt = self.timing_fcn(dt)
@@ -43,10 +32,113 @@ class Engine(object):
         if self.agents_update:
             for agent in self.agents:
                 agent.update(dt)
-            # print "time: {}, position: {}, w: {}".format(self.agents[0].t,self.agents[0].rotation, self.agents[0].angular_velocity)
+        self.player.update(dt)
+        self.window.position = self.player.position
+        self.window.rotation = self.player.rotation
 
     def draw(self):
         self.batch.draw()
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        self.player.on_mouse_motion(x, y, dx, dy)
+
+    def on_key_press(self, symbol, modifiers):
+        self.player.on_key_press(symbol, modifiers)
+
+    def on_key_release(self, symbol, modifiers):
+        self.player.on_key_release(symbol, modifiers)
+
+
+class Player(object):
+    def __init__(self, position=(0., 0., 8.), rotation=(0., 0.), mouse_velocity=0.15,
+                 flying_speed=15):
+        """Processes key and mouse input and updates camera position and rotation accordingly.
+        :param Engine engine:
+        :param tuple position: (x, y, z) position of camera
+        :param tuple rotation: (theta, phi) rotation of camera
+        :return:
+        """
+        self.position = np.array(position)
+        self.rotation = np.array(rotation)
+        self.mouse_velocity = mouse_velocity
+        self.strafe = [0, 0]
+        self.flying_speed = flying_speed
+
+    def update(self, dt):
+        """ Private implementation of the `update()` method. This is where most
+        of the motion logic lives, along with gravity and collision detection.
+        """
+        self.position += self.get_motion_vector() * dt * self.flying_speed
+
+    def get_motion_vector(self):
+        pass
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        pass
+
+    def on_key_press(self, symbol, modifiers):
+
+        if symbol == key.W:
+            self.strafe[0] -= 1
+        elif symbol == key.S:
+            self.strafe[0] += 1
+        elif symbol == key.A:
+            self.strafe[1] -= 1
+        elif symbol == key.D:
+            self.strafe[1] += 1
+
+    def on_key_release(self, symbol, modifiers):
+
+        if symbol == key.W:
+            self.strafe[0] += 1
+        elif symbol == key.S:
+            self.strafe[0] -= 1
+        elif symbol == key.A:
+            self.strafe[1] += 1
+        elif symbol == key.D:
+            self.strafe[1] -= 1
+
+
+class FreePlayer(Player):
+    def __init__(self, *args, **kwargs):
+        super(FreePlayer, self).__init__(*args, **kwargs)
+
+    def get_motion_vector(self):
+        """Returns the current motion vector indicating the velocity of the
+        player.
+        :return: Tuple containing camera velocity in x, y, z
+        """
+        dx, dy, dz = 0.0, 0.0, 0.0
+        if any(self.strafe):
+            x, y = self.rotation
+            strafe = math.degrees(math.atan2(*self.strafe))
+            y_angle = math.radians(y)
+            x_angle = math.radians(x + strafe)
+            m = math.cos(y_angle)
+            dy = math.sin(y_angle)
+            if self.strafe[1]:
+                # Moving left or right.
+                dy = 0.0
+                m = 1
+            if self.strafe[0] > 0:
+                # Moving backwards.
+                dy *= -1
+            # When you are flying up or down, you have less left and right
+            # motion.
+            dx = math.cos(x_angle) * m
+            dz = math.sin(x_angle) * m
+
+        return np.array([dx, dy, dz])
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        super(FreePlayer, self).on_mouse_motion(x, y, dx, dy)
+        self.rotation += np.array([dx, dy]) * self.mouse_velocity
+        self.rotation[1] = max(-90, min(90, self.rotation[1]))
+
+
+class RTSPlayer(Player):
+    def get_motion_vector(self):
+        return np.array([self.strafe[1], -self.strafe[0], 0])
 
 
 class Window(pyglet.window.Window):
@@ -55,20 +147,13 @@ class Window(pyglet.window.Window):
         super(Window, self).__init__(*args, **kwargs)
 
         self.TICKS_PER_SEC = 60
-        self.FLYING_SPEED = 15
+
+        # overwritten to refer to Player attributes
+        self.position = np.array((0, 0, 0))
+        self.rotation = np.array((0, 0))
 
         self.exclusive = False
         """ whether mouse is captured """
-
-        self.flying = True
-
-        self.position = (0, 0, 0)
-        """ (x,y,z) position of camera """
-
-        self.rotation = (0, 0)
-        """ (theta, phi) rotation of camera """
-
-        self.strafe = [0, 0]
 
         self.engine = engine
 
@@ -78,66 +163,13 @@ class Window(pyglet.window.Window):
 
     def update(self, dt):
         self.engine.update(dt)
-        self._update(dt)
-
-    def _update(self, dt):
-        """ Private implementation of the `update()` method. This is where most
-        of the motion logic lives, along with gravity and collision detection.
-
-        Parameters
-        ----------
-        dt : float
-            The change in time since the last call.
-
-        """
-        # walking
-        speed = self.FLYING_SPEED
-        d = dt * speed  # distance covered this tick.
-        dx, dy, dz = self.get_motion_vector()
-        # New position in space, before accounting for gravity.
-        dx, dy, dz = dx * d, dy * d, dz * d
-        self.position = tuple(np.array(self.position) + [dx, dy, dz])
 
     def set_exclusive_mouse(self, exclusive=True):
         """ If `exclusive` is True, the game will capture the mouse, if False
         the game will ignore the mouse.
-
         """
         super(Window, self).set_exclusive_mouse(exclusive)
         self.exclusive = exclusive
-
-    def get_motion_vector(self):
-        """ Returns the current motion vector indicating the velocity of the
-        player.
-
-        Returns
-        -------
-        vector : tuple of len 3
-            Tuple containing the velocity in x, y, and z respectively.
-
-        """
-        dx, dy, dz = 0.0, 0.0, 0.0
-        if any(self.strafe):
-            x, y = self.rotation
-            strafe = math.degrees(math.atan2(*self.strafe))
-            y_angle = math.radians(y)
-            x_angle = math.radians(x + strafe)
-            if self.flying:
-                m = math.cos(y_angle)
-                dy = math.sin(y_angle)
-                if self.strafe[1]:
-                    # Moving left or right.
-                    dy = 0.0
-                    m = 1
-                if self.strafe[0] > 0:
-                    # Moving backwards.
-                    dy *= -1
-                # When you are flying up or down, you have less left and right
-                # motion.
-                dx = math.cos(x_angle) * m
-                dz = math.sin(x_angle) * m
-
-        return dx, dy, dz
 
     def on_mouse_press(self, x, y, button, modifiers):
         """Called when a mouse button is pressed.
@@ -152,70 +184,31 @@ class Window(pyglet.window.Window):
             self.set_exclusive_mouse(True)
 
     def on_mouse_motion(self, x, y, dx, dy):
-        """
-
-        :param x:
-        :param y:
-        :param dx:
-        :param dy:
-        :return:
+        """Passes the position and motion of mouse to Engine.
         """
         if self.exclusive:
-            m = 0.15
-            x, y = self.rotation
-            x, y = x + dx * m, y + dy * m
-            y = max(-90, min(90, y))
-            self.rotation = (x, y)
+            self.engine.on_mouse_motion(x, y, dx, dy)
 
     def on_key_press(self, symbol, modifiers):
-        """ Called when the player presses a key. See pyglet docs for key
-        mappings.
-
-        Parameters
-        ----------
-        symbol : int
-            Number representing the key that was pressed.
-        modifiers : int
-            Number representing any modifying keys that were pressed.
-
+        """Called when the player presses a key. See pyglet docs for key mappings.
+        :param int symbol: number representing the key that was pressed
+        :param int modifiers: number representing any modifying keys that were pressed
+        :return:
         """
-        if symbol == key.W:
-            self.strafe[0] -= 1
-        elif symbol == key.S:
-            self.strafe[0] += 1
-        elif symbol == key.A:
-            self.strafe[1] -= 1
-        elif symbol == key.D:
-            self.strafe[1] += 1
-        elif symbol == key.ESCAPE:
+        if symbol == key.ESCAPE:
             self.set_exclusive_mouse(False)
-        elif symbol == key.TAB:
-            self.flying = not self.flying
+        self.engine.on_key_press(symbol, modifiers)
 
     def on_key_release(self, symbol, modifiers):
-        """ Called when the player releases a key. See pyglet docs for key
-        mappings.
-
-        Parameters
-        ----------
-        symbol : int
-            Number representing the key that was pressed.
-        modifiers : int
-            Number representing any modifying keys that were pressed.
-
+        """Called when the player releases a key. See pyglet docs for key mappings.
+        :param int symbol: number representing the key that was pressed
+        :param int modifiers: number representing any modifying keys that were pressed
+        :return:
         """
-        if symbol == key.W:
-            self.strafe[0] += 1
-        elif symbol == key.S:
-            self.strafe[0] -= 1
-        elif symbol == key.A:
-            self.strafe[1] += 1
-        elif symbol == key.D:
-            self.strafe[1] -= 1
+        self.engine.on_key_release(symbol, modifiers)
 
     def set_3d(self):
         """ Configure OpenGL to draw in 3d.
-
         """
         width, height = self.get_size()
         glEnable(GL_DEPTH_TEST)
@@ -242,7 +235,6 @@ class Window(pyglet.window.Window):
 
     def setup(self):
         """ Basic OpenGL configuration.
-
         """
         # Set the color of "clear", i.e. the sky, in rgba.
         glClearColor(0.5, 0.69, 1.0, 1)
@@ -286,6 +278,7 @@ def start_server(window):
     class ServerService(rpyc.Service):
         def exposed_get_window(self):
             return window
+
     # start the rpyc server
     server = rpyc.utils.server.ThreadedServer(ServerService, port=12345, protocol_config=PROTOCOL_CONFIG)
     t = threading.Thread(target=server.start)
@@ -305,6 +298,7 @@ def start_client():
 def main():
     window = Window(width=800, height=600, caption='Pyglet', resizable=True)
     window.run()
+
 
 if __name__ == '__main__':
     main()

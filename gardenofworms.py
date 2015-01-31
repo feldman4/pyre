@@ -10,18 +10,22 @@ import numpy as np
 
 NUM_SEEDS = 30
 GARDEN_LENGTH = 100
+player = pyre.engine.FreePlayer
 
 
 def main():
     window = None
     if os.name == 'nt':
         window = pyre.engine.Window(width=800, height=600, caption='Pyglet', resizable=True)
+    if os.name == 'posix':
+        window = pyre.engine.Window(width=800, height=600, caption='Pyglet', resizable=True)
 
     # load file with face textures and make a group of it
     texture_region = pyglet.resource.texture('textures/garden.png')
     texture_group = pyglet.graphics.TextureGroup(texture_region)
     # make an engine to control graphics
-    engine = pyre.engine.Engine()
+    engine = pyre.engine.Engine(window=window)
+    engine.player = player()
 
     # coordinates within garden.png
     tex_dict = {'slug': pyre.engine.tex_coord((0, 1), 4),
@@ -51,11 +55,8 @@ def main():
         worm.swap_ai(pyre.garden.WormAI)
         engine.add_agent(worm)
 
-    if os.name == 'posix':
-        window = pyre.engine.Window(width=800, height=600, caption='Pyglet', resizable=True)
-
     window.engine = engine
-    window.position = (0, 0, 8)
+    engine.player.position = np.array((0., 0., 8.))
     window.setup()
     # window.minimize()
 
