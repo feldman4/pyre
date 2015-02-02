@@ -150,7 +150,7 @@ class Spin(Agent):
 
 
 class Avatar(object):
-    def __init__(self, texture_group, batch, tex_dict=None, state_dict=None,
+    def __init__(self, batch, tex_dict=None, state_dict=None,
                  position=None, rotation=None):
         """Visual manifestation of Agent. Manipulated by the Agent's update method.
         Graphics:
@@ -163,7 +163,6 @@ class Avatar(object):
                                 (exact form depends on subclass).
         :return:
         """
-        self.texture_group = texture_group
         self.batch = batch
         self.tex_dict = tex_dict
         self.state_dict = state_dict
@@ -185,13 +184,13 @@ class Avatar(object):
 
 
 class Avatar2D(Avatar):
-    def __init__(self, texture_group, batch,
+    def __init__(self, batch,
                  size=(1, 1, 1), color=(255, 0, 0), *args, **kwargs):
         """Parent class for 2D Avatars, handles rotation before display.
         :param color:
         :return:
         """
-        super(Avatar2D, self).__init__(texture_group, batch, *args, **kwargs)
+        super(Avatar2D, self).__init__(batch, *args, **kwargs)
         self.color = color
         self.size = size
         if self.rotation is None:
@@ -211,12 +210,12 @@ class Avatar2D(Avatar):
         :return:
         """
         super(Avatar2D, self).show()
-        tex_coords = self.tex_dict[self.state_dict[self.state]]
+        texture_group, tex_coords = self.tex_dict[self.state_dict[self.state]]
         vertex_data = self.square_vertices()
 
         if not (self.vertex_lists and len(self.vertex_lists)):
             # create vertex list
-            self.vertex_lists = [self.batch.add(4, GL_QUADS, self.texture_group,
+            self.vertex_lists = [self.batch.add(4, GL_QUADS, texture_group,
                                                 ('v3f', vertex_data), ('t2f', tex_coords))]
         else:
             # update vertex list
@@ -279,11 +278,12 @@ class Cube(Avatar):
         """
         faces = self.state_dict[self.state]
         vertex_data = self.cube_vertices()
-        tex_coords = [x for face in faces for x in self.tex_dict[face]]
+        tex_coords = [x for face in faces for x in self.tex_dict[face][1]]
+        texture_group = self.tex_dict[face][0]
 
         if not self.vertex_lists:
             # create vertex list
-            self.vertex_lists = [self.batch.add(24, GL_QUADS, self.texture_group,
+            self.vertex_lists = [self.batch.add(24, GL_QUADS, texture_group,
                                                 ('v3f', vertex_data), ('t2f', tex_coords))]
         else:
             self.vertex_lists[0].vertices = vertex_data

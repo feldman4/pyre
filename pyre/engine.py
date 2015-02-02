@@ -26,6 +26,12 @@ class Engine(object):
     def add_agent(self, agent):
         self.agents.append(agent)
 
+    def remove_agent(self, agent):
+        agent.avatar.hide()
+        agent.ai.remove()
+        self.agents.remove(agent)
+
+
     def update(self, dt):
         dt = self.timing_fcn(dt)
         self.t += dt

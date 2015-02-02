@@ -2,6 +2,7 @@
 import pyre.agent
 import numpy as np
 
+
 class AI(object):
     def __init__(self, agent, *args, **kwargs):
         """An AI evolves an Agent in time.
@@ -15,6 +16,12 @@ class AI(object):
     def update(self, dt):
         self.update_position(dt)
         self.t += dt
+
+    def remove(self):
+        """Called when Agent is deleted.
+        :return:
+        """
+        pass
 
     def update_position(self, dt):
         """Applies velocity and angular velocity of Agent to its position and rotation.

@@ -53,26 +53,26 @@ class GardenAvatar(pyre.agent.Avatar2D):
 
 
 class Slug(GardenAvatar):
-    def __init__(self, texture_group, batch, *args, **kwargs):
-        super(Slug, self).__init__(texture_group, batch, *args, **kwargs)
+    def __init__(self, batch, *args, **kwargs):
+        super(Slug, self).__init__( batch, *args, **kwargs)
         self.state_dict = {None: 'slug'}
 
 
 class Seed(GardenAvatar):
-    def __init__(self, texture_group, batch, *args, **kwargs):
-        super(Seed, self).__init__(texture_group, batch, *args, **kwargs)
+    def __init__(self, batch, *args, **kwargs):
+        super(Seed, self).__init__(batch, *args, **kwargs)
         self.state_dict = {None: 'seed'}
 
 
 class Plant(GardenAvatar):
-    def __init__(self, texture_group, batch, *args, **kwargs):
-        super(Plant, self).__init__(texture_group, batch, *args, **kwargs)
+    def __init__(self, batch, *args, **kwargs):
+        super(Plant, self).__init__(batch, *args, **kwargs)
         self.state_dict = {None: 'plant'}
 
 
 class Butterfly(GardenAvatar):
-    def __init__(self, texture_group, batch, *args, **kwargs):
-        super(Butterfly, self).__init__(texture_group, batch, *args, **kwargs)
+    def __init__(self, batch, *args, **kwargs):
+        super(Butterfly, self).__init__(batch, *args, **kwargs)
         self.state_dict = {None: 'butterfly'}
 
 
@@ -122,4 +122,4 @@ class ButterflyAI(WormAI):
         self.agent.angular_velocity[2] += self.noise_theta * dt * (random.random() - 0.5)
         self.agent.speed = self.agent.butterfly_speed
         super(ButterflyAI, self).update(dt)
-        self.agent.position = (self.agent.position + 10) % 20 - 10
+        self.agent.position = (self.agent.position + 4) % 8 - 4

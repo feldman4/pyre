@@ -9,7 +9,7 @@ import random
 import os
 import numpy as np
 
-NUM_SEEDS = 18
+NUM_SEEDS = 3
 GARDEN_LENGTH = 10
 player = pyre.engine.RTSPlayer
 
@@ -37,10 +37,10 @@ def main():
     engine.show_levels()
 
     # coordinates within garden.png
-    tex_dict = {'slug': pyre.engine.tex_coord((0, 1), 4),
-                'plant': pyre.engine.tex_coord((0, 0), 4),
-                'butterfly': pyre.engine.tex_coord((1, 0), 4),
-                'seed': pyre.engine.tex_coord((1, 1), 4)}
+    tex_dict = {'slug': (texture_group, pyre.engine.tex_coord((0, 1), 4)),
+                'plant': (texture_group, pyre.engine.tex_coord((0, 0), 4)),
+                'butterfly': (texture_group, pyre.engine.tex_coord((1, 0), 4)),
+                'seed': (texture_group, pyre.engine.tex_coord((1, 1), 4))}
 
     for i in range(NUM_SEEDS):
         spacing = GARDEN_LENGTH / math.sqrt(NUM_SEEDS)
@@ -56,10 +56,10 @@ def main():
                         'slug': 1},
                     lifecycle=('butterfly', 'seed', 'plant', 'slug'),
                     guises={
-                        'butterfly': Butterfly(texture_group, engine.batch, tex_dict=tex_dict),
-                        'seed': Seed(texture_group, engine.batch, tex_dict=tex_dict),
-                        'plant': Plant(texture_group, engine.batch, tex_dict=tex_dict),
-                        'slug': Slug(texture_group, engine.batch, tex_dict=tex_dict),
+                        'butterfly': Butterfly(engine.batch, tex_dict=tex_dict),
+                        'seed': Seed(engine.batch, tex_dict=tex_dict),
+                        'plant': Plant(engine.batch, tex_dict=tex_dict),
+                        'slug': Slug(engine.batch, tex_dict=tex_dict),
                         },
                     lifetime_noise=3)
         worm.swap_ai(pyre.garden.WormAI)
