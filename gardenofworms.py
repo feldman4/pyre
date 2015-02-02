@@ -1,6 +1,7 @@
 import math
 import pyre.ai
 import pyre.engine
+import pyre.level
 from pyre.garden import Worm, Slug, Butterfly, Seed, Plant
 import pyglet
 import pyglet.graphics
@@ -8,7 +9,7 @@ import random
 import os
 import numpy as np
 
-NUM_SEEDS = 200
+NUM_SEEDS = 18
 GARDEN_LENGTH = 10
 player = pyre.engine.RTSPlayer
 
@@ -20,12 +21,20 @@ def main():
     if os.name == 'posix':
         window = pyre.engine.Window(width=800, height=600, caption='Pyglet', resizable=True)
 
+    pyglet.resource.path = ['.', './textures', './levels']
+    pyglet.resource.reindex()
+
     # load file with face textures and make a group of it
-    texture_region = pyglet.resource.texture('textures/garden.png')
+    texture_region = pyglet.resource.texture('garden.png')
     texture_group = pyglet.graphics.TextureGroup(texture_region)
     # make an engine to control graphics
     engine = pyre.engine.Engine(window=window)
     engine.player = player()
+
+    # load level
+    engine.levels = [pyre.level.Level('garden.json', batch=engine.batch, scale=0.025,
+                                      center_flag=True)]
+    engine.show_levels()
 
     # coordinates within garden.png
     tex_dict = {'slug': pyre.engine.tex_coord((0, 1), 4),
@@ -38,7 +47,7 @@ def main():
         sz = 0.66 + random.random() / 3
         worm = Worm(position=np.array([random.random() * spacing - spacing/2,
                                        random.random() * spacing - spacing/2,
-                                       0]),
+                                       0.5]),
                     size=(sz, sz, sz), butterfly_speed=np.array([0, 2, 0]),
                     lifetimes={
                         'butterfly': 6,
@@ -51,12 +60,13 @@ def main():
                         'seed': Seed(texture_group, engine.batch, tex_dict=tex_dict),
                         'plant': Plant(texture_group, engine.batch, tex_dict=tex_dict),
                         'slug': Slug(texture_group, engine.batch, tex_dict=tex_dict),
-                        })
+                        },
+                    lifetime_noise=3)
         worm.swap_ai(pyre.garden.WormAI)
         engine.add_agent(worm)
 
     window.engine = engine
-    engine.player.position = np.array((0., 0., 8.))
+    engine.player.position = np.array((0., 0., 12.))
     window.setup()
     # window.minimize()
 

@@ -12,6 +12,7 @@ class Engine(object):
         self.t = 0
         self.agents = []
         """:type: list[Agent]"""
+        self.levels = []
         self.world_mesh = {}
         self.agents_update = True
         # modifies the dt passed from Window
@@ -31,6 +32,7 @@ class Engine(object):
         if self.agents_update:
             for agent in self.agents:
                 agent.update(dt)
+
         self.player.update(dt)
         self.window.position = self.player.position
         self.window.rotation = self.player.rotation
@@ -46,6 +48,10 @@ class Engine(object):
 
     def on_key_release(self, symbol, modifiers):
         self.player.on_key_release(symbol, modifiers)
+
+    def show_levels(self):
+        for level in self.levels:
+            level.show()
 
 
 class Player(object):
@@ -260,17 +266,21 @@ class Window(pyglet.window.Window):
         pyglet.app.run()
 
 
-def tex_coord(position, n=4):
+def tex_coord(position, m=4, n=4, flip_y=False):
     """Returns the bounding vertices of a square inside Texture.
-
     :param tuple|list position: standard (x,y) coordinate within Texture
-    :param n: number of images along one side
+    :param int m: number of images along width
+    :param int n: number of images along height
     :return:
     """
-    m = 1.0 / n
-    dx = position[0] * m
-    dy = position[1] * m
-    return dx, dy, dx + m, dy, dx + m, dy + m, dx, dy + m
+    tile_width = 1.0 / m
+    tile_height = 1.0 / n
+    dx = position[0] * tile_width
+    dy = position[1] * tile_height
+    if flip_y:
+        dy = 1.0 - dy - tile_height
+    return dx, dy, dx + tile_width, dy, dx + tile_width, dy + tile_height, dx, dy + tile_height
+
 
 # functions to set up rpyc connection
 

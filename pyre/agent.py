@@ -228,10 +228,10 @@ class Avatar2D(Avatar):
         self.vertex_lists = None
 
 
-SQUARE_VERTICES = [[0, 0, 0],
-                   [1, 0, 0],
-                   [1, 1, 0],
-                   [0, 1, 0]]
+SQUARE_VERTICES = np.array([[0, 0, 0],
+                            [1, 0, 0],
+                            [1, 1, 0],
+                            [0, 1, 0]])
 CUBE_VERTICES = [[0, 0, 0],
                  [0, 0, 1],
                  [0, 1, 0],

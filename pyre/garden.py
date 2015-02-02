@@ -7,7 +7,8 @@ import pyre.agent
 
 class Worm(pyre.agent.PhysicalAgent):
     def __init__(self, initial_state='slug', color=(255, 0, 0), butterfly_speed=None,
-                 lifecycle={'butterfly', 'seed', 'plant', 'slug'}, lifetimes=None, *args, **kwargs):
+                 lifecycle={'butterfly', 'seed', 'plant', 'slug'}, lifetimes=None,
+                 lifetime_noise=0, *args, **kwargs):
         """An Agent that evolves through lifecycle states with given lifetimes.
         :param string initial_state:
         :param tuple color: an RGB tuple, e.g., (255, 0, 0)
@@ -26,6 +27,7 @@ class Worm(pyre.agent.PhysicalAgent):
         self.lifetimes = dict(zip(self.lifecycle), [1] * 4) if lifetimes is None else lifetimes
         self.lifetime = self.lifetimes[self.state]
         self.butterfly_speed = np.array([0., 1., 0.]) if butterfly_speed is None else butterfly_speed
+        self.lifetime_noise = lifetime_noise
 
     def evolve(self):
         self.state = self.lifecycle[(self.lifecycle.index(self.state) + 1) % len(self.lifecycle)]
@@ -37,7 +39,7 @@ class Worm(pyre.agent.PhysicalAgent):
             self.swap_ai(ButterflyAI)
             # remember butterfly rotation
             self.rotation = self.avatar.rotation
-            self.ai.lifetime = self.lifetime
+            self.ai.lifetime = self.lifetime + random.random() * self.lifetime_noise
         if self.state != 'butterfly':
             self.swap_ai(WormAI)
             self.rotation = np.array([0., 0., 0.])
@@ -120,3 +122,4 @@ class ButterflyAI(WormAI):
         self.agent.angular_velocity[2] += self.noise_theta * dt * (random.random() - 0.5)
         self.agent.speed = self.agent.butterfly_speed
         super(ButterflyAI, self).update(dt)
+        self.agent.position = (self.agent.position + 10) % 20 - 10
