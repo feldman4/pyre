@@ -37,8 +37,6 @@ class Worm(pyre.agent.PhysicalAgent):
         # print id(self.avatar.rotation)
         if self.state == 'butterfly':
             self.swap_ai(ButterflyAI)
-            # remember butterfly rotation
-            self.rotation = self.avatar.rotation
             self.ai.lifetime = self.lifetime + random.random() * self.lifetime_noise
         if self.state != 'butterfly':
             self.swap_ai(WormAI)
@@ -90,7 +88,7 @@ class WormAI(pyre.ai.PhysicalAI):
 
 
 class ButterflyAI(WormAI):
-    def __init__(self, worm, k_theta=0.2, noise_theta=2, sine_amp_theta=3,
+    def __init__(self, worm, k_theta=0.2, noise_theta=0, sine_amp_theta=3,
                  sine_period_theta=1, sine_phase=0, *args, **kwargs):
         """
 
@@ -123,3 +121,4 @@ class ButterflyAI(WormAI):
         self.agent.speed = self.agent.butterfly_speed
         super(ButterflyAI, self).update(dt)
         self.agent.position = (self.agent.position + 4) % 8 - 4
+

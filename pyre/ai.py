@@ -1,5 +1,6 @@
 # noinspection PyUnresolvedReferences
 import pyre.agent
+import pyre.engine
 import numpy as np
 
 
@@ -34,9 +35,13 @@ class AI(object):
             self.agent.rotation += dt * self.agent.angular_velocity
 
 
+coordinate = pyre.engine.Coordinate()
+
+
 class PhysicalAI(AI):
     def update_position(self, dt):
-        self.agent.position += dt * pyre.agent.rotate_vertices(self.agent.speed, self.agent.rotation)
+        coordinate.center_flag = False
+        self.agent.position += dt * coordinate.rotate_vertices(self.agent.speed, self.agent.rotation)
         super(PhysicalAI, self).update_position(dt)
         self.agent.speed = np.array([0., 0., 0.])
 

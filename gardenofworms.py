@@ -9,7 +9,7 @@ import random
 import os
 import numpy as np
 
-NUM_SEEDS = 3
+NUM_SEEDS = 20
 GARDEN_LENGTH = 10
 player = pyre.engine.RTSPlayer
 
@@ -32,9 +32,10 @@ def main():
     engine.player = player()
 
     # load level
-    engine.levels = [pyre.level.Level('garden2.json', batch=engine.batch, scale=0.025,
-                                      center_flag=True)]
-    engine.show_levels()
+    level = pyre.level.Level('garden2.json', batch=engine.batch, scale=0.03125,
+                             center_level_flag=True)
+    engine.agents.append(level)
+    level.show()
 
     # coordinates within garden.png
     tex_dict = {'slug': (texture_group, pyre.engine.tex_coord((0, 1), 4)),
@@ -45,8 +46,8 @@ def main():
     for i in range(NUM_SEEDS):
         spacing = GARDEN_LENGTH / math.sqrt(NUM_SEEDS)
         sz = 0.66 + random.random() / 3
-        worm = Worm(position=np.array([random.random() * spacing - spacing/2,
-                                       random.random() * spacing - spacing/2,
+        worm = Worm(position=np.array([random.random() * spacing - spacing / 2,
+                                       random.random() * spacing - spacing / 2,
                                        0.5]),
                     size=(sz, sz, sz), butterfly_speed=np.array([0, 2, 0]),
                     lifetimes={

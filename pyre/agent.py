@@ -3,14 +3,15 @@ from pyglet.gl import GL_QUADS
 from pyglet.graphics import Batch, TextureGroup
 import copy
 import pyre.ai
+import pyre.engine
 
 
 class Agent(object):
     def __init__(self, avatar=None, visible=False, position=None, guises=None,
-                 rotation=None, size=np.array([1, 1, 1]), texture_group=None, batch=None):
+                 rotation=None, size=np.array([1, 1, 1]), scale=1, batch=None):
         """Represents an entity physically embodied by an Avatar and updated by an AI
 
-        :param bool avatar:
+        :param Avatar avatar:
         :param bool visible: whether to show
         :param numpy.ndarray position: (x,y,z)
         :param numpy.ndarray rotation: (theta, phi)
@@ -19,12 +20,14 @@ class Agent(object):
         :return:
         """
 
+        self.avatar = Avatar(batch) # nonsense to straighten out UML hierarchy
         self.avatar = avatar
+        """:type: Avatar"""
         self.visible = visible
         self.position = position
         self.rotation = rotation
         self.size = size
-        self.texture_group = texture_group
+        self.scale = scale
         self.batch = batch
         self.guises = guises
         """:type : dict:"""
@@ -59,9 +62,9 @@ class Agent(object):
 
         :return:
         """
-        self.avatar.position = self.position
-        self.avatar.rotation = self.rotation
-        self.avatar.size = self.size
+        self.avatar.coordinate.position = self.position
+        self.avatar.coordinate.rotation = self.rotation
+        self.avatar.coordinate.size = self.size
         self.avatar.show()
 
     def __del__(self):
@@ -82,11 +85,12 @@ class PhysicalAgent(Agent):
         """
         super(PhysicalAgent, self).__init__(*args, **kwargs)
 
+        self.position = np.array([0., 0., 0.]) if self.position is None else self.position
+        self.rotation = np.array([0., 0., 0.]) if self.rotation is None else self.rotation
+
         self.velocity = np.array([0., 0., 0.]) if velocity is None else velocity
         self.angular_velocity = np.array([0., 0., 0.]) if angular_velocity is None else angular_velocity
         self.speed = np.array([0., 0., 0.]) if speed is None else speed
-
-        self.rotation = np.array([0., 0., 0.]) if self.rotation is None else self.rotation
 
 
 class Spin(Agent):
@@ -151,23 +155,26 @@ class Spin(Agent):
 
 class Avatar(object):
     def __init__(self, batch, tex_dict=None, state_dict=None,
-                 position=None, rotation=None):
+                 position=None, rotation=None, scale=1, size=(1, 1, 1)):
         """Visual manifestation of Agent. Manipulated by the Agent's update method.
         Graphics:
             The Avatar is informed of a Batch, which it uses to track any VertexLists it creates.
 
-        :param TextureGroup texture_group: Binds Texture containing all textures.
         :param Batch batch: Master Batch located in Engine.
-        :param dict tex_dict: Dictionary to look up texture coordinates. Usage depends on subclass.
+        :param dict tex_dict: Dictionary mapping state to (TextureGroup, texture coordinates). Usage depends on subclass.
         :param dict state_dict: Dictionary with self.state as key, returns tuple of keys to tex_dict
                                 (exact form depends on subclass).
         :return:
         """
         self.batch = batch
         self.tex_dict = tex_dict
-        self.state_dict = state_dict
-        self.position = position
-        self.rotation = rotation
+        self.state_dict = {None: None} if state_dict is None else state_dict
+        self.coordinate = pyre.engine.Coordinate(position=position,
+                                                 rotation=rotation,
+                                                 scale=scale,
+                                                 size=size,
+                                                 center_flag=True,
+                                                 translate_first=False)
         self.vertex_lists = []
         """:type: list[pyglet.graphics.vertexdomain.VertexList]"""
 
@@ -183,35 +190,40 @@ class Avatar(object):
         pass
 
 
+class CompositeAvatar(Avatar):
+    def __init__(self, batch, avatar_list=None, *args, **kwargs):
+        super(CompositeAvatar, self).__init__(batch, *args, **kwargs)
+        self.avatar_list = [] if avatar_list is None else avatar_list
+
+    def show(self):
+        for avatar in self.avatar_list:
+            avatar.show()
+
+    def hide(self):
+        for avatar in self.avatar_list:
+            avatar.hide()
+
+
 class Avatar2D(Avatar):
-    def __init__(self, batch,
-                 size=(1, 1, 1), color=(255, 0, 0), *args, **kwargs):
+    def __init__(self, batch, *args, **kwargs):
         """Parent class for 2D Avatars, handles rotation before display.
         :param color:
         :return:
         """
         super(Avatar2D, self).__init__(batch, *args, **kwargs)
-        self.color = color
-        self.size = size
-        if self.rotation is None:
-            self.rotation = np.array([0., 0., 0.])
 
-    def square_vertices(self):
-        """Get vertices of square after applying translation and rotation.
+    def rectangle_vertices(self):
+        """Get vertices of rectangle after applying translation and rotation.
         :return:
         """
-        vertices = np.array(SQUARE_VERTICES)
-        vertices = np.array((vertices - 0.5) * self.size)
-        vertices = rotate_vertices(vertices, self.rotation) + self.position
-        return vertices.flatten()
+        return self.coordinate.transform(SQUARE_VERTICES).flatten()
 
     def show(self):
         """Add a VertexList to the Batch or update existing.
         :return:
         """
-        super(Avatar2D, self).show()
         texture_group, tex_coords = self.tex_dict[self.state_dict[self.state]]
-        vertex_data = self.square_vertices()
+        vertex_data = self.rectangle_vertices()
 
         if not (self.vertex_lists and len(self.vertex_lists)):
             # create vertex list
@@ -227,10 +239,10 @@ class Avatar2D(Avatar):
         self.vertex_lists = None
 
 
-SQUARE_VERTICES = np.array([[0, 0, 0],
-                            [1, 0, 0],
-                            [1, 1, 0],
-                            [0, 1, 0]])
+SQUARE_VERTICES = np.array([[0., 0., 0.],
+                            [1., 0., 0.],
+                            [1., 1., 0.],
+                            [0., 1., 0.]])
 CUBE_VERTICES = [[0, 0, 0],
                  [0, 0, 1],
                  [0, 1, 0],
@@ -292,33 +304,3 @@ class Cube(Avatar):
     def hide(self):
         self.vertex_lists[0].delete()
 
-
-def rotation_matrix(rotation):
-    """
-    Builds three sequential rotation matrices parametrized by rotation angles about
-    x, y, z axes.
-    :param np.array rotation: [x, y, z] basis rotation angles
-    :return dict: dictionary with x, y, z rotation matrices
-    """
-    x, y, z = rotation
-    return {'x': np.array([[1, 0, 0],
-                           [0, np.cos(x), -np.sin(x)],
-                           [0, np.sin(x), np.cos(x)]]),
-            'y': np.array([[np.cos(y), 0, np.sin(y)],
-                           [0, 1, 0],
-                           [-np.sin(y), 0, np.cos(y)]]),
-            'z': np.array([[np.cos(z), -np.sin(z), 0],
-                           [np.sin(z), np.cos(z), 0],
-                           [0, 0, 1]])
-    }
-
-
-def rotate_vertices(vertices, rotation):
-    """
-    Rotate numpy array of vertices using [x,y,z] rotation angles provided in rotation
-    :param vertices:
-    :param rotation:
-    :return:
-    """
-    r = rotation_matrix(rotation)
-    return r['z'].dot(r['y'].dot(r['x'])).dot(vertices.T).T
