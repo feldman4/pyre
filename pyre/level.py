@@ -62,10 +62,11 @@ class Level(object):
             self.center()
         # load textures
         for tileset in self.json['tilesets']:
-            height = tileset['imageheight'] / self.json['tileheight']
-            width = tileset['imagewidth'] / self.json['tilewidth']
+            spacing = tileset['spacing']
+            height = (tileset['imageheight'] + spacing) / (self.json['tileheight'] + spacing)
+            width = (tileset['imagewidth'] + spacing) /( self.json['tilewidth'] + spacing)
             img = pyglet.resource.image(tileset['image'])
-            img_grid = pyglet.image.ImageGrid(img, height, width, row_padding=1, column_padding=1)
+            img_grid = pyglet.image.ImageGrid(img, height, width, row_padding=spacing, column_padding=spacing)
             self.tex_grids.append(pyglet.image.TextureGrid(img_grid))
             self.texture_groups.append(pyglet.graphics.TextureGroup(self.tex_grids[-1].texture))
 

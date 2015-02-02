@@ -32,7 +32,7 @@ def main():
     engine.player = player()
 
     # load level
-    engine.levels = [pyre.level.Level('garden.json', batch=engine.batch, scale=0.025,
+    engine.levels = [pyre.level.Level('garden2.json', batch=engine.batch, scale=0.025,
                                       center_flag=True)]
     engine.show_levels()
 
