@@ -242,6 +242,9 @@ class Window(pyglet.window.Window):
         glColor3d(1, 1, 1)
         self.engine.draw()
 
+    def set_clear_color(self, color):
+        glClearColor(color)
+
     def setup(self):
         """ Basic OpenGL configuration.
         """

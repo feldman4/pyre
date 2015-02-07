@@ -20,7 +20,7 @@ class Agent(object):
         :return:
         """
 
-        self.avatar = Avatar(batch) # nonsense to straighten out UML hierarchy
+        self.avatar = Avatar(batch)  # nonsense to straighten out UML hierarchy
         self.avatar = avatar
         """:type: Avatar"""
         self.visible = visible
