@@ -38,12 +38,16 @@ def dict2xml(d, root_node=None):
 class Object(object):
     pass
 
-
+import random
 def mm_dict(switch_tree):
     my_dict = {'node': []}
     for switch in switch_tree:
-        my_dict['node'].append({'text': switch.name})
-    return my_dict
+
+        my_dict['node'].append({'TEXT': switch.name,
+                                'ID': random.random()})
+        print my_dict
+    return {'node': {'node': my_dict,
+                     'text': 'top'}}
 
 switch1 = Object()
 switch1.name = 'top'
@@ -52,8 +56,9 @@ switch1.switches[0].name = 'first'
 switch1.switches[1].name = 'second'
 
 switch_dict = mm_dict(switch1.switches)
+switch_dict['node']['node']['node'][0]['node'] = {'text': 1}
 switch_xml = dict2xml(switch_dict, 'map')
-
+switch_xml = switch_xml.replace('>', '>\n')
 open('blah.mm', 'w').write(switch_xml)
 
 """

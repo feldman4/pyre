@@ -22,7 +22,7 @@ class Worm(pyre.agent.PhysicalAgent):
         self.state = initial_state
         self.color = color
         self.avatar = self.guises[self.state]
-        self.update_avatar()
+        # self.update_avatar()
         self.lifecycle = lifecycle
         self.lifetimes = dict(zip(self.lifecycle), [1] * 4) if lifetimes is None else lifetimes
         self.lifetime = self.lifetimes[self.state]

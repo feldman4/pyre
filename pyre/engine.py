@@ -4,13 +4,31 @@ import numpy as np
 import rpyc.utils.server
 from pyglet.gl import *
 from pyglet.window import key
+import pyre.world
+
+
+class IncrementSet(set):
+    """set that supports +=, -= with items or lists, crappy
+    """
+    def __add__(self, other):
+        try:
+            other = set(other)
+        except TypeError:
+            other = {other}
+        return self.union(other)
+
+    def __sub__(self, other):
+        try:
+            other = set(other)
+        except TypeError:
+            other = {other}
+        return self.difference(other)
 
 
 class Engine(object):
     def __init__(self, window=None):
         self.t = 0
-        self.agents = []
-        """:type: list[pyre.agent.Agent]"""
+        self.top_world = pyre.world.World()
         self.levels = []
         self.world_mesh = {}
         self.agents_update = True
@@ -20,23 +38,12 @@ class Engine(object):
 
         self.window = window
         self.batch = pyglet.graphics.Batch()
-        self.player = Player(self)
-
-    def add_agent(self, agent):
-        self.agents.append(agent)
-
-    def remove_agent(self, agent):
-        agent.avatar.hide()
-        agent.ai.remove()
-        self.agents.remove(agent)
+        self.player = Player()
 
     def update(self, dt):
         dt = self.timing_fcn(dt)
         self.t += dt
-        if self.agents_update:
-            for agent in self.agents:
-                agent.update(dt)
-
+        self.top_world.update(dt)
         self.player.update(dt)
         self.window.position = self.player.position
         self.window.rotation = self.player.rotation

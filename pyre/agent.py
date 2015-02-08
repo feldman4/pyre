@@ -35,7 +35,7 @@ class Agent(object):
         self.ai = pyre.ai.AI(self)
 
     def update(self, dt):
-        """Updates AI, then updates avatar, then shows avatar.
+        """Updates AI, then updates avatar.
 
         :param float dt: Real time interval since last update.
         :return:
@@ -47,6 +47,12 @@ class Agent(object):
 
     def swap_ai(self, ai, *args, **kwargs):
         self.ai = copy.deepcopy(ai)(self, *args, **kwargs)
+
+    def show(self):
+        self.avatar.show()
+
+    def hide(self):
+        self.avatar.hide()
 
     def update_ai(self, dt):
         """Call AI object's update function.
@@ -235,7 +241,8 @@ class Avatar2D(Avatar):
             self.vertex_lists[0].tex_coords = tex_coords
 
     def hide(self):
-        self.vertex_lists[0].delete()
+        if len(self.vertex_lists) > 0:
+            self.vertex_lists[0].delete()
         self.vertex_lists = None
 
 
