@@ -11,7 +11,7 @@ def setup(engine=None):
                        pyre.world.World(engine=engine, name='garden2')]
     level1 = pyre.level.Level('garden.json', batch=engine.batch, scale=0.03125,
                               center_level_flag=True)
-    level2 = pyre.level.Level('garden2.json', batch=engine.batch, scale=0.03125,
+    level2 = pyre.level.Level('room.json', batch=engine.batch, scale=0.03125,
                               center_level_flag=True)
     garden.children[0].agents.append(level1)
     garden.children[1].agents.append(level2)
@@ -19,8 +19,8 @@ def setup(engine=None):
     top_world.children = [splash_screen, garden]
 
     # attach switches
-    gardenofworms_switches.MoveToLevelTwo(engine, garden.children[0], garden.children[1])
-    gardenofworms_switches.MoveToLevelTwo(engine, garden.children[1], garden.children[0])
+    # gardenofworms_switches.MoveToLevelTwo(engine, garden.children[0], garden.children[1])
+    # gardenofworms_switches.MoveToLevelTwo(engine, garden.children[1], garden.children[0])
 
     engine.top_world = top_world
 

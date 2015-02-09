@@ -269,9 +269,9 @@ class Window(pyglet.window.Window):
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         # setup_fog()
         glDepthFunc(GL_LEQUAL)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        # glBlendFunc(GL_SRC_ALPHA_SATURATE, GL_ONE)
 
         glAlphaFunc(GL_GREATER, 0.1)
         glEnable(GL_ALPHA_TEST)

@@ -31,6 +31,7 @@ class Level(pyre.agent.PhysicalAgent):
         self.json = {}
         self.texture_groups = []
         self.tex_grids = []
+        self.first_gids = []
         self.load_json()
         self.tex_info = {0: (None, None)}  # gid=0 indicates empty tile
         self.initialize_tex_info()
@@ -65,12 +66,13 @@ class Level(pyre.agent.PhysicalAgent):
             self.json = json.load(fh)
         # load textures
         for tileset in self.json['tilesets']:
+            self.first_gids.append(tileset['firstgid'])
             spacing = tileset['spacing']
-            height = (tileset['imageheight'] + spacing) / (self.json['tileheight'] + spacing)
-            width = (tileset['imagewidth'] + spacing) / (self.json['tilewidth'] + spacing)
+            rows = (tileset['imageheight'] + spacing) / (self.json['tileheight'] + spacing)
+            columns = (tileset['imagewidth'] + spacing) / (self.json['tilewidth'] + spacing)
             img = pyglet.resource.image(tileset['image'])
             # use padding specified by "spacing" property of tileset in .json
-            img_grid = pyglet.image.ImageGrid(img, height, width, row_padding=spacing, column_padding=spacing)
+            img_grid = pyglet.image.ImageGrid(img, rows, columns, row_padding=spacing, column_padding=spacing)
             self.tex_grids.append(pyglet.image.TextureGrid(img_grid))
             self.texture_groups.append(pyglet.graphics.TextureGroup(self.tex_grids[-1].texture))
 
@@ -81,7 +83,7 @@ class Level(pyre.agent.PhysicalAgent):
         """
         for z, layer in enumerate(self.json['layers']):
             # json layers ordered from bottom to top
-            self.layer_types[layer['type']](layer, z / 10)
+            self.layer_types[layer['type']](layer, z / 10.)
             # higher level code needs to add layers (CompositeAvatar) to engine
 
     def make_objectgroup(self, layer, z):
@@ -146,6 +148,7 @@ class Level(pyre.agent.PhysicalAgent):
                                                   center_flag=False)
         vertices = dummy_coordinate.transform(vertices)
         vertices = self.coordinate.transform(vertices)
+
         return position[::4, :], vertices
 
     def update_avatar(self):
@@ -159,15 +162,15 @@ class Level(pyre.agent.PhysicalAgent):
             """
         # gid is a unique identifier for tile in one of the level's textures, indexed from 1
         # gid=0 indicates empty tile
-        gid = 0
-        for texture_group, tex_grid in zip(self.texture_groups, self.tex_grids):
+        for texture_group, tex_grid, first_gid in zip(self.texture_groups, self.tex_grids, self.first_gids):
+            gid = first_gid
             for row in range(tex_grid.rows):
                 for col in range(tex_grid.columns):
-                    gid += 1
                     flipped_row = tex_grid.rows - row - 1
                     tex_coords = tex_grid[flipped_row, col].tex_coords
                     tex_coords = np.delete(np.array(tex_coords), np.s_[2::3])
                     self.tex_info[gid] = (texture_group, tex_coords)
+                    gid += 1
 
 
 class Tile(pyre.agent.Avatar2D):

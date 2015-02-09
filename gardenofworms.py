@@ -67,14 +67,13 @@ def main():
             worm.swap_ai(pyre.garden.WormAI)
             world.agents.append(worm)
 
+    start_world = 1
     engine.top_world.activate(activate_children=False)
     engine.top_world.children[1].activate(activate_children=False)
-    engine.top_world.children[1].children[0].activate()
-    engine.top_world.children[1].children[0].agents[0].show()
-    engine.top_world.children[1].children[0].agents[1].show()
+    engine.top_world.children[1].children[start_world].activate()
 
     window.engine = engine
-    engine.player.position = np.array((0., 0., 20.))
+    engine.player.position = np.array((0., 0., 12.))
     window.setup()
     # window.minimize()
 
