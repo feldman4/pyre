@@ -1,6 +1,7 @@
 import math
 import gardenofworms_setup
 import pyre.ai
+import pyre.agent
 import pyre.engine
 import pyre.level
 from pyre.garden import Worm, Slug, Butterfly, Seed, Plant
@@ -9,6 +10,7 @@ import pyglet.graphics
 import random
 import os
 import numpy as np
+import pyre.utils
 
 NUM_SEEDS = 2
 GARDEN_LENGTH = 10
@@ -78,8 +80,13 @@ def main():
     # window.minimize()
 
     # rpyc service for remote access
-    pyre.engine.start_server(window)
-
+    pyre.utils.start_server(window)
+    engine.top_world.show_world_tree(types_to_filter=(list, dict,
+                                                      pyre.agent.CompositeAvatar,
+                                                      pyre.agent.Agent),
+                                     too_many=6,
+                                     open_dot=False,
+                                     max_depth=16)
     window.run()
 
 

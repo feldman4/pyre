@@ -5,6 +5,7 @@ import pyglet
 import pyglet.graphics
 import random
 import os
+from pyre.utils import start_server
 
 CRYSTAL_SIZE = 4
 
@@ -54,7 +55,7 @@ def main():
     window.minimize()
 
     # rpyc service for remote access
-    pyre.engine.start_server(window)
+    start_server(window)
 
     window.run()
 

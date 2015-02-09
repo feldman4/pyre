@@ -7,6 +7,7 @@ import pyre.engine
 import pyre.agent
 
 # Level could inherit directly from pyglet Group, or it could be related to World
+from pyre.utils import Coordinate
 
 SQUARE_VERTICES = pyre.agent.SQUARE_VERTICES
 
@@ -37,7 +38,7 @@ class Level(pyre.agent.PhysicalAgent):
         self.initialize_tex_info()
         if center_level_flag:
             self.position = self.center(self.position)
-        self.coordinate = pyre.engine.Coordinate(position=self.position,
+        self.coordinate = Coordinate(position=self.position,
                                                  rotation=self.rotation,
                                                  scale=self.scale,
                                                  center_flag=False)
@@ -142,7 +143,7 @@ class Level(pyre.agent.PhysicalAgent):
         position = np.concatenate((idx % self.json['width'], -idx / self.json['width'], np.zeros(idx.shape) + z),
                                   axis=0).T
         position = np.multiply(position, (np.array([self.json['tilewidth'], self.json['tileheight'], 1.])))
-        dummy_coordinate = pyre.engine.Coordinate(position=position,
+        dummy_coordinate = Coordinate(position=position,
                                                   size=(self.json['tilewidth'], self.json['tileheight'], 1.),
                                                   translate_first=True,
                                                   center_flag=False)

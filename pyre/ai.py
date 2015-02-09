@@ -2,6 +2,7 @@
 import pyre.agent
 import pyre.engine
 import numpy as np
+from pyre.utils import Coordinate
 
 
 class AI(object):
@@ -35,7 +36,7 @@ class AI(object):
             self.agent.rotation += dt * self.agent.angular_velocity
 
 
-coordinate = pyre.engine.Coordinate()
+coordinate = Coordinate()
 
 
 class PhysicalAI(AI):

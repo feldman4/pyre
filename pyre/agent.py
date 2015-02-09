@@ -3,7 +3,7 @@ from pyglet.gl import GL_QUADS
 from pyglet.graphics import Batch, TextureGroup
 import copy
 import pyre.ai
-import pyre.engine
+from pyre.utils import Coordinate
 
 
 class Agent(object):
@@ -175,7 +175,7 @@ class Avatar(object):
         self.batch = batch
         self.tex_dict = tex_dict
         self.state_dict = {None: None} if state_dict is None else state_dict
-        self.coordinate = pyre.engine.Coordinate(position=position,
+        self.coordinate = Coordinate(position=position,
                                                  rotation=rotation,
                                                  scale=scale,
                                                  size=size,
