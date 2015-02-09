@@ -1,7 +1,6 @@
 import pyre.world
 import pyre.level
 import gardenofworms_switches
-from pyre.switch_old import Switch, RemoteCondition
 
 
 def setup(engine=None):

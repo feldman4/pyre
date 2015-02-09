@@ -266,48 +266,48 @@ CUBE_TOP = [1, 3, 7, 5]
 CUBE_BOTTOM = [0, 2, 6, 4]
 
 
-class Cube(Avatar):
-    def __init__(self, texture_group, batch, size=(1, 1, 1),
-                 tex_dict=None, state_dict=None):
-        """A Cube with a dictionary defining the surface textures in each state.
-        :param TextureGroup texture_group: Contains textures for Cube faces.
-        :param Batch batch: pyglet Batch to which VertexList is added
-        :param tuple size: (x,y,z) extension of cube (more like a rectangular prism)
-        :param dict state_dict: Keys are True, False; entries are tuple of keys into tex_dict
-                                    for each face, (TOP, BOTTOM, FRONT, BACK, LEFT, RIGHT)
-        :param dict tex_dict: contains tex_coords in texture_group corresponding to keys in faces
-        :return:
-        """
-        super(Cube, self).__init__(texture_group, batch, tex_dict=tex_dict, state_dict=state_dict)
-
-        self.size = size
-
-    # noinspection PyTypeChecker
-    def cube_vertices(self):
-        """Returns coordinates of cube after scaling, translation, rotation.
-        :return: 24 x 3 array of vertex coordinates
-        """
-        vertices = np.array(CUBE_VERTICES)
-        vertices = rotate_vertices((vertices - 0.5), self.rotation) * self.size + self.position
-        return vertices[CUBE_TOP + CUBE_BOTTOM + CUBE_FRONT + CUBE_BACK + CUBE_LEFT + CUBE_RIGHT].flatten()
-
-    def show(self):
-        """Add a VertexList to the Batch or update existing.
-        :return:
-        """
-        faces = self.state_dict[self.state]
-        vertex_data = self.cube_vertices()
-        tex_coords = [x for face in faces for x in self.tex_dict[face][1]]
-        texture_group = self.tex_dict[face][0]
-
-        if not self.vertex_lists:
-            # create vertex list
-            self.vertex_lists = [self.batch.add(24, GL_QUADS, texture_group,
-                                                ('v3f', vertex_data), ('t2f', tex_coords))]
-        else:
-            self.vertex_lists[0].vertices = vertex_data
-            self.vertex_lists[0].tex_coords = tex_coords
-
-    def hide(self):
-        self.vertex_lists[0].delete()
+# class Cube(Avatar):
+#     def __init__(self, texture_group, batch, size=(1, 1, 1),
+#                  tex_dict=None, state_dict=None):
+#         """A Cube with a dictionary defining the surface textures in each state.
+#         :param TextureGroup texture_group: Contains textures for Cube faces.
+#         :param Batch batch: pyglet Batch to which VertexList is added
+#         :param tuple size: (x,y,z) extension of cube (more like a rectangular prism)
+#         :param dict state_dict: Keys are True, False; entries are tuple of keys into tex_dict
+#                                     for each face, (TOP, BOTTOM, FRONT, BACK, LEFT, RIGHT)
+#         :param dict tex_dict: contains tex_coords in texture_group corresponding to keys in faces
+#         :return:
+#         """
+#         super(Cube, self).__init__(texture_group, batch, tex_dict=tex_dict, state_dict=state_dict)
+#
+#         self.size = size
+#
+#     # noinspection PyTypeChecker
+#     def cube_vertices(self):
+#         """Returns coordinates of cube after scaling, translation, rotation.
+#         :return: 24 x 3 array of vertex coordinates
+#         """
+#         vertices = np.array(CUBE_VERTICES)
+#         vertices = rotate_vertices((vertices - 0.5), self.rotation) * self.size + self.position
+#         return vertices[CUBE_TOP + CUBE_BOTTOM + CUBE_FRONT + CUBE_BACK + CUBE_LEFT + CUBE_RIGHT].flatten()
+#
+#     def show(self):
+#         """Add a VertexList to the Batch or update existing.
+#         :return:
+#         """
+#         faces = self.state_dict[self.state]
+#         vertex_data = self.cube_vertices()
+#         tex_coords = [x for face in faces for x in self.tex_dict[face][1]]
+#         texture_group = self.tex_dict[face][0]
+#
+#         if not self.vertex_lists:
+#             # create vertex list
+#             self.vertex_lists = [self.batch.add(24, GL_QUADS, texture_group,
+#                                                 ('v3f', vertex_data), ('t2f', tex_coords))]
+#         else:
+#             self.vertex_lists[0].vertices = vertex_data
+#             self.vertex_lists[0].tex_coords = tex_coords
+#
+#     def hide(self):
+#         self.vertex_lists[0].delete()
 

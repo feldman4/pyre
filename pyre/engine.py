@@ -348,6 +348,7 @@ class Coordinate(object):
                                [0, 0, 1]])
                 }
 
+
 def tex_coord(position, m=4, n=4, flip_y=False):
     """Returns the bounding vertices of a square inside Texture.
     :param tuple|list position: standard (x,y) coordinate within Texture

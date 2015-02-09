@@ -22,8 +22,12 @@ def main():
     if os.name == 'posix':
         window = pyre.engine.Window(width=800, height=600, caption='Pyglet', resizable=True)
 
+    current_path = os.path.abspath(__file__)
+    current_path = '\\'.join(current_path.split('\\')[:-1])
     pyglet.resource.path = ['.', './textures', './levels']
+    pyglet.resource.path = [current_path, current_path + '/textures', current_path + '/levels']
     pyglet.resource.reindex()
+
 
     texture_region = pyglet.resource.texture('garden.png')
     texture_group = pyglet.graphics.TextureGroup(texture_region)
@@ -67,9 +71,10 @@ def main():
     engine.top_world.children[1].activate(activate_children=False)
     engine.top_world.children[1].children[0].activate()
     engine.top_world.children[1].children[0].agents[0].show()
+    engine.top_world.children[1].children[0].agents[1].show()
 
     window.engine = engine
-    engine.player.position = np.array((0., 0., 12.))
+    engine.player.position = np.array((0., 0., 20.))
     window.setup()
     # window.minimize()
 
