@@ -277,6 +277,7 @@ def tex_coord(position, m=4, n=4, flip_y=False):
         dy = 1.0 - dy - tile_height
     return dx, dy, dx + tile_width, dy, dx + tile_width, dy + tile_height, dx, dy + tile_height
 
+
 def main():
     window = Window(width=800, height=600, caption='Pyglet', resizable=True)
     window.run()

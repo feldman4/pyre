@@ -1,6 +1,8 @@
 import subprocess
-import objgraph
+
 import networkx as nx
+
+from pyre import objgraph_test
 
 
 class World(object):
@@ -76,15 +78,15 @@ class World(object):
         highlight_filter = lambda x: not isinstance(x, (list, dict))
         types_to_filter += (type(self),)
         graph_filter = lambda x: isinstance(x, types_to_filter)
-        objgraph.show_refs([self],
-                           filename=dot_path,
-                           max_depth=max_depth,
-                           too_many=too_many, filter=graph_filter,
-                           highlight=highlight_filter)
-        # pyparsing makes read_dot() slow
-        G = filter_object_graph(nx.DiGraph(nx.read_dot(dot_path)), filter_edges=filter_edges)
-        nx.write_dot(G, dot_path)
+        graph = objgraph_test.show_refs([self],
+                                        filename=dot_path,
+                                        max_depth=max_depth,
+                                        too_many=too_many, filter=graph_filter,
+                                        highlight=highlight_filter)
+        graph = filter_object_graph(graph, filter_edges=filter_edges)
+        nx.write_dot(graph, dot_path)
         import fileinput
+
         for i, line in enumerate(fileinput.input(dot_path, inplace=1)):
             if i == 1:
                 print "node[shape=box, style=filled, fillcolor=white]",
@@ -92,34 +94,35 @@ class World(object):
             print line[:-1].replace('\n', '\\n') + '\n',
 
         if open_dot:
-            subprocess.Popen(['xdot', "my_graph.dot"])
+            subprocess.Popen(['xdot', dot_path])
 
 
-def filter_object_graph(G, filter_dict=True, filter_edges=()):
+def filter_object_graph(graph, filter_dict=True, filter_edges=()):
     """
-    :param networkx.DiGraph G: graph to filter
+    :param networkx.DiGraph graph: graph to filter
     :param bool filter_dict: if True, remove nodes pointed to by "__dict__" edges and reconnect edges
     :param tuple filter_edges: names of edges to remove (entire branch below edge is also removed)
     :return:
     """
     # cut out __dict__ objects
-    for start, end, data in G.edges(data=True):
+    top_node = nx.topological_sort(graph)[0]
+    for start, end, data in graph.edges(data=True):
         if filter_dict:
             if 'label' in data.keys() and data['label'] == '"__dict__"':
                 # reassign edges
-                for edge in G.edges(end, data=True):
-                    G.add_edge(start, edge[1], attr_dict=edge[2])
+                for edge in graph.edges(end, data=True):
+                    graph.add_edge(start, edge[1], attr_dict=edge[2])
                 # delete node
-                G.remove_node(end)
+                graph.remove_node(end)
                 continue
         for label_to_filter in filter_edges:
             if 'label' in data.keys() and data['label'] == '"' + label_to_filter + '"':
-                G.remove_node(end)
+                graph.remove_node(end)
                 break
-    first_node = G.nodes()[0]
-    for L in nx.weakly_connected_component_subgraphs(G):
-        if first_node in L:
+    for L in nx.weakly_connected_component_subgraphs(graph):
+        if top_node in L:
             return L
+
 
 def swap_world(world_to_activate, world_to_inactivate, swap_children=False,
                restore=False):
@@ -128,5 +131,3 @@ def swap_world(world_to_activate, world_to_inactivate, swap_children=False,
         world_to_activate.restore(restore_children=swap_children)
     else:
         world_to_activate.activate(activate_children=swap_children)
-
-

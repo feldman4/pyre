@@ -1,6 +1,5 @@
 import json
 import numpy as np
-from pyglet.gl import GL_QUADS
 import pyglet.resource
 import pyglet.graphics
 import pyre.engine
@@ -16,9 +15,9 @@ class Level(pyre.agent.PhysicalAgent):
     def __init__(self, json_name, center_level_flag=False, *args, **kwargs):
         """Loads information contained in .json exported by Tiled Editor. Creates TextureGroups for referenced tilesets,
                 as well as dict mapping .json gid (graphic id) to (TextureGroup, tex_coords).
-                Creates a Layer for each layer in .json file, preserving draw order via z-coordinate. The entire Level can
-                be positioned, rotated and scaled. Assumes 1 pixel padding in tileset. Supports freely located tiles from
-                Tiled Editor object layers.
+                Creates a Layer for each layer in .json file, preserving draw order via z-coordinate. The entire Level
+                can be positioned, rotated and scaled. Assumes 1 pixel padding in tileset. Supports freely located tiles
+                from Tiled Editor object layers.
             :param str json_name: Level data filename, uses pyglet.resource so path need not be specified
             :param numpy.array position: (x, y, z), applied to all Layers in Level
             :param numpy.array rotation: applied to Layer from top left corner, before translating by position
@@ -39,9 +38,9 @@ class Level(pyre.agent.PhysicalAgent):
         if center_level_flag:
             self.position = self.center(self.position)
         self.coordinate = Coordinate(position=self.position,
-                                                 rotation=self.rotation,
-                                                 scale=self.scale,
-                                                 center_flag=False)
+                                     rotation=self.rotation,
+                                     scale=self.scale,
+                                     center_flag=False)
         self.layers = []
         """:type: list[CompositeAvatar]"""
         self.layer_types = {'tilelayer': self.make_tilelayer,
@@ -144,9 +143,9 @@ class Level(pyre.agent.PhysicalAgent):
                                   axis=0).T
         position = np.multiply(position, (np.array([self.json['tilewidth'], self.json['tileheight'], 1.])))
         dummy_coordinate = Coordinate(position=position,
-                                                  size=(self.json['tilewidth'], self.json['tileheight'], 1.),
-                                                  translate_first=True,
-                                                  center_flag=False)
+                                      size=(self.json['tilewidth'], self.json['tileheight'], 1.),
+                                      translate_first=True,
+                                      center_flag=False)
         vertices = dummy_coordinate.transform(vertices)
         vertices = self.coordinate.transform(vertices)
 
