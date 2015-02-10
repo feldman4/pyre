@@ -75,7 +75,7 @@ def main():
     engine.top_world.children[1].children[start_world].activate()
 
     window.engine = engine
-    engine.player.position = np.array((0., 0., 12.))
+    engine.player.position = np.array((0., 0., 7.))
     window.setup()
     # window.minimize()
 

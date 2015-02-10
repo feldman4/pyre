@@ -19,8 +19,8 @@ def setup(engine=None):
     top_world.children = [splash_screen, garden]
 
     # attach switches
-    # gardenofworms_switches.MoveToLevelTwo(engine, garden.children[0], garden.children[1])
-    # gardenofworms_switches.MoveToLevelTwo(engine, garden.children[1], garden.children[0])
+    gardenofworms_switches.MoveToLevelTwo(engine, garden.children[0], garden.children[1])
+    gardenofworms_switches.MoveToLevelTwo(engine, garden.children[1], garden.children[0])
 
     engine.top_world = top_world
 
